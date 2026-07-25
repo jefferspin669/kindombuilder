@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kingdom Builder — The World of Aetheria</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles/landing.css" />
+  </head>
+  <body>
+    <div class="sky" aria-hidden="true"></div>
+    <header class="topnav">
+      <a class="nav-brand" href="#top">Aetheria</a>
+      <nav>
+        <a href="#world">World</a>
+        <a href="#atlas">Atlas</a>
+        <a href="#chronicle">Chronicle</a>
+        <a href="/game.html" class="nav-cta">Play</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div class="hero-veil"></div>
+        <div class="hero-copy">
+          <p class="brand">Aetheria</p>
+          <h1>Every kingdom has a story. Every choice shapes history.</h1>
+          <p class="lede">
+            Rise from the ashes of the Eternal Empire. Found cities, forge
+            legends, and leave a world that remembers.
+          </p>
+          <div class="cta-row">
+            <a class="btn primary" href="/game.html">Begin Reign</a>
+            <a class="btn ghost" href="#atlas">Explore Continents</a>
+          </div>
+        </div>
+      </section>
+
+      <section id="world" class="section lore">
+        <h2>The Eternal Empire Fell</h2>
+        <p>
+          Long ago, one civilization mastered magic, engineering, and knowledge
+          beyond imagination—then vanished. Forests swallowed their cities.
+          Oceans rose. Strange creatures woke in the ruins. Now new kingdoms
+          rise. Your goal is not merely to survive. It is to become the greatest
+          kingdom in history.
+        </p>
+      </section>
+
+      <section id="atlas" class="section atlas">
+        <h2>The Continents</h2>
+        <p class="section-lede">
+          Six lands. Six destinies. Choose where your story begins.
+        </p>
+        <div class="atlas-grid" id="atlas-grid"></div>
+        <article class="atlas-detail" id="atlas-detail"></article>
+      </section>
+
+      <section class="section living">
+        <h2>A Living World</h2>
+        <p>
+          Kingdoms expand and collapse. Forests spread. Rivers flood. Seasons
+          turn. Wildlife migrates. Every campaign writes a unique history—and
+          when an age ends, the map remembers.
+        </p>
+      </section>
+
+      <section class="section wonders">
+        <h2>Wonders & Endgame</h2>
+        <p>
+          Raise the Skyspire Citadel. Open ancient vaults. Race rivals for
+          dragons, starflight, and the secrets that remake the world.
+        </p>
+      </section>
+
+      <section id="chronicle" class="section chronicle">
+        <h2>The World Remembers</h2>
+        <ol class="timeline" id="landing-timeline">
+          <li><span>Year 1</span> A blank chronicle is opened.</li>
+          <li><span>Year 45</span> A kingdom is founded in Verdoria.</li>
+          <li><span>Year 108</span> Plague reshapes the living map.</li>
+          <li><span>Year 400</span> Steam answers the old ruins.</li>
+          <li><span>Year 1000</span> Humanity reaches for the stars.</li>
+        </ol>
+        <a class="btn primary" href="/game.html">Write Your Chronicle</a>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Kingdom Builder · The World of Aetheria</p>
+    </footer>
+    <script type="module" src="/src/landing.js"></script>
+  </body>
+</html>

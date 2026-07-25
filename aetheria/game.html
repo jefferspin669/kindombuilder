@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aetheria — Reign</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles/game.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="bar">
+        <a class="logo" href="/">Aetheria</a>
+        <div class="resources" id="resources"></div>
+        <div class="meta">
+          <span id="season-label">Spring</span>
+          <span id="year-label">Year 1</span>
+          <button id="btn-end-turn" class="btn">End Turn</button>
+          <button id="btn-menu" class="btn ghost">Menu</button>
+        </div>
+      </header>
+
+      <div class="decision-banner hidden" id="decision-banner"></div>
+
+      <div class="layout">
+        <aside class="sidebar left">
+          <div class="tabs" id="left-tabs"></div>
+          <div class="panel" id="left-panel"></div>
+        </aside>
+
+        <main class="map-wrap">
+          <canvas id="map" width="960" height="640"></canvas>
+          <div class="map-hud">
+            <div class="zoom-controls">
+              <button data-zoom="continent">World</button>
+              <button data-zoom="realm">Realm</button>
+              <button data-zoom="street">Street</button>
+            </div>
+            <p id="map-hint">Explore with the Scout · Found a city with the Settler</p>
+          </div>
+        </main>
+
+        <aside class="sidebar right">
+          <div class="tabs" id="right-tabs"></div>
+          <div class="panel" id="right-panel"></div>
+        </aside>
+      </div>
+
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="modal hidden" id="menu-modal">
+      <div class="modal-card">
+        <h2>Reign Menu</h2>
+        <button id="btn-new">New Campaign</button>
+        <button id="btn-save">Save</button>
+        <button id="btn-load">Load</button>
+        <button id="btn-export">Export JSON</button>
+        <button id="btn-roadmap">Roadmap (Stages 1–34)</button>
+        <button id="btn-close-menu">Close</button>
+        <pre id="roadmap" class="hidden"></pre>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="victory-modal">
+      <div class="modal-card">
+        <h2 id="victory-title">Victory</h2>
+        <p id="victory-body"></p>
+        <button id="btn-seal-age">Seal Age & Continue Legacy</button>
+        <button id="btn-victory-close">Continue Playing</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/game/main.js"></script>
+  </body>
+</html>
