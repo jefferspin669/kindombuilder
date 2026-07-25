@@ -1,11 +1,12 @@
 # kindombuilder
 
-**Kingdom Builder: The World of Aetheria**
+**Kingdom Builder: The World of Aetheria** — HTML prototype.
 
 ```bash
 cd aetheria
-npm install
-npm run dev
+python3 -m http.server 8080
 ```
 
-Open http://localhost:5173/ for the landing page, or http://localhost:5173/game.html to play.
+Open http://localhost:8080/ (landing) or http://localhost:8080/game.html (play).
+
+No npm/Vite required to run the game.
