@@ -7,6 +7,6 @@ cd aetheria
 python3 -m http.server 8080
 ```
 
-Open http://localhost:8080/ (landing) or http://localhost:8080/game.html (play).
+Open http://localhost:8080/game.html
 
-No npm/Vite required to run the game.
+Default admin: `admin` / `admin` (remembered forever in this browser’s vault).

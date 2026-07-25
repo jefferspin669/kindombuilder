@@ -18,33 +18,23 @@
         <p class="auth-brand">Aetheria</p>
         <h1>Sign in to reign</h1>
         <p class="auth-note">
-          Your <strong>admin</strong> account is stored in a protected vault on this browser.
-          New campaigns and clearing saves will not delete it.
+          Your <strong>admin</strong> account is saved in a protected browser vault.
+          New campaigns never delete it.
         </p>
         <form id="auth-form">
-          <label>
-            Username
-            <input id="auth-username" name="username" autocomplete="username" required />
-          </label>
-          <label>
-            Password
-            <input id="auth-password" name="password" type="password" autocomplete="current-password" required />
-          </label>
-          <label class="auth-check">
-            <input id="auth-remember" type="checkbox" checked />
-            Remember me on this browser
-          </label>
+          <label>Username <input id="auth-username" autocomplete="username" required /></label>
+          <label>Password <input id="auth-password" type="password" autocomplete="current-password" required /></label>
+          <label class="auth-check"><input id="auth-remember" type="checkbox" checked /> Remember me</label>
+          <label class="auth-check"><input id="auth-audio" type="checkbox" checked /> UI sounds</label>
           <p id="auth-error" class="auth-error" hidden></p>
           <p id="auth-hint" class="auth-hint"></p>
           <button type="submit" class="btn">Sign in</button>
+          <button type="button" id="btn-guest" class="btn ghost">Quick start (admin/admin)</button>
         </form>
         <details class="auth-advanced">
-          <summary>Account tools</summary>
-          <button type="button" id="btn-export-vault" class="ghost">Export account vault</button>
-          <label class="file-btn ghost">
-            Import account vault
-            <input id="import-vault" type="file" accept="application/json,.json" hidden />
-          </label>
+          <summary>Backup admin vault</summary>
+          <button type="button" id="btn-export-vault" class="btn ghost">Export vault JSON</button>
+          <label class="file-btn">Import vault JSON<input id="import-vault" type="file" accept="application/json,.json" hidden /></label>
         </details>
       </div>
     </div>
@@ -52,9 +42,10 @@
     <div id="app" class="hidden">
       <header class="bar">
         <a class="logo" href="index.html">Aetheria</a>
-        <span class="account-chip" id="account-chip" title="Signed-in account"></span>
-        <div class="resources" id="resources"></div>
+        <span id="account-chip" class="account-chip"></span>
+        <div id="resources" class="resources"></div>
         <div class="meta">
+          <span id="happy-label">☺ 65</span>
           <span id="season-label">Spring</span>
           <span id="year-label">Year 1</span>
           <button id="btn-end-turn" class="btn">End Turn</button>
@@ -62,48 +53,58 @@
         </div>
       </header>
 
-      <div class="decision-banner hidden" id="decision-banner"></div>
+      <div id="event-banner" class="event-banner hidden"></div>
 
-      <div class="layout">
-        <aside class="sidebar left">
-          <div class="tabs" id="left-tabs"></div>
-          <div class="panel" id="left-panel"></div>
-        </aside>
-
-        <main class="map-wrap">
-          <canvas id="map" width="960" height="640"></canvas>
-          <div class="map-hud">
-            <div class="zoom-controls">
-              <button data-zoom="continent">World</button>
-              <button data-zoom="realm">Realm</button>
-              <button data-zoom="street">Street</button>
+      <div class="play-layout">
+        <section class="map-column">
+          <div class="map-stage">
+            <canvas id="map" width="960" height="640"></canvas>
+            <div id="tutorial" class="tutorial hidden">
+              <div class="tutorial-title"></div>
+              <div class="tutorial-body"></div>
+              <div class="tutorial-actions">
+                <button id="btn-tutorial-next" class="btn">Next</button>
+                <button id="btn-tutorial-skip" class="btn ghost">Skip</button>
+              </div>
             </div>
-            <p id="map-hint">Explore with the Scout · Found a city with the Settler (F)</p>
           </div>
-        </main>
+          <div class="action-bar">
+            <div id="unit-info" class="unit-info"></div>
+            <div class="action-buttons">
+              <button id="btn-found" class="btn">Found City (F)</button>
+              <button id="btn-gather" class="btn">Gather (G)</button>
+              <button id="btn-delve" class="btn">Delve</button>
+              <button id="btn-wait" class="btn ghost">Wait</button>
+              <button id="btn-next-unit" class="btn ghost">Next Unit (Tab)</button>
+              <button id="btn-zoom-out" class="btn ghost">−</button>
+              <button id="btn-zoom-in" class="btn ghost">+</button>
+              <button id="btn-center" class="btn ghost">Center</button>
+            </div>
+          </div>
+          <div id="log" class="log"></div>
+        </section>
 
-        <aside class="sidebar right">
-          <div class="tabs" id="right-tabs"></div>
-          <div class="panel" id="right-panel"></div>
+        <aside class="side">
+          <canvas id="minimap" width="260" height="170"></canvas>
+          <div id="panel-tabs" class="panel-tabs"></div>
+          <div id="side-panel" class="side-panel"></div>
         </aside>
       </div>
-
-      <div class="log" id="log"></div>
     </div>
+
+    <div id="toasts" class="toasts"></div>
 
     <div class="modal hidden" id="menu-modal">
       <div class="modal-card">
         <h2>Reign Menu</h2>
-        <button id="btn-new">New Campaign</button>
-        <button id="btn-save">Save</button>
-        <button id="btn-load">Load</button>
-        <button id="btn-export">Export JSON</button>
-        <button id="btn-clear-campaign">Clear campaign data</button>
-        <button id="btn-account">Account</button>
-        <button id="btn-sign-out">Sign out</button>
-        <button id="btn-roadmap">Roadmap (Stages 1–34)</button>
-        <button id="btn-close-menu">Close</button>
-        <pre id="roadmap" class="hidden"></pre>
+        <button id="btn-new" class="btn">New Campaign</button>
+        <button id="btn-save" class="btn">Quick Save</button>
+        <button id="btn-load" class="btn">Quick Load</button>
+        <button id="btn-clear-campaign" class="btn ghost">Clear campaign data</button>
+        <button id="btn-account" class="btn ghost">Account</button>
+        <button id="btn-help" class="btn ghost">Help / Controls</button>
+        <button id="btn-sign-out" class="btn ghost">Sign out</button>
+        <button id="btn-close-menu" class="btn">Close</button>
       </div>
     </div>
 
@@ -111,13 +112,27 @@
       <div class="modal-card">
         <h2>Account</h2>
         <p id="account-summary" class="muted"></p>
-        <p class="muted">Admin vault key: <code>aetheria_vault</code> — never wiped by New Campaign.</p>
-        <h3>Change password</h3>
+        <p class="muted">Protected key: <code>aetheria_vault</code></p>
         <label>Current password <input id="pw-current" type="password" /></label>
         <label>New password <input id="pw-new" type="password" /></label>
         <p id="pw-error" class="auth-error" hidden></p>
-        <button id="btn-change-pw">Update password</button>
-        <button id="btn-close-account" class="ghost">Close</button>
+        <button id="btn-change-pw" class="btn">Update password</button>
+        <button id="btn-close-account" class="btn ghost">Close</button>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="help-modal">
+      <div class="modal-card wide">
+        <h2>How to play</h2>
+        <ul>
+          <li><b>Click</b> a unit to select · click a tile to step toward it</li>
+          <li><b>WASD / Arrows</b> move · <b>Tab</b> next unit · <b>Enter</b> end turn</li>
+          <li><b>F</b> found city (Settler) · <b>G</b> gather (Worker)</li>
+          <li>Build farms & mills, train troops, research tech, deal with rivals</li>
+          <li>Delve ruins for lore · complete missions · chase a victory path</li>
+          <li>Admin account survives New Campaign and clear-save</li>
+        </ul>
+        <button id="btn-close-help" class="btn">Close</button>
       </div>
     </div>
 
@@ -125,8 +140,7 @@
       <div class="modal-card">
         <h2 id="victory-title">Victory</h2>
         <p id="victory-body"></p>
-        <button id="btn-seal-age">Seal Age & Continue Legacy</button>
-        <button id="btn-victory-close">Continue Playing</button>
+        <button id="btn-victory-close" class="btn">Continue Playing</button>
       </div>
     </div>
 

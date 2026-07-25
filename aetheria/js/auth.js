@@ -1,31 +1,38 @@
 /**
- * Persistent account vault.
- * Stored separately from campaign saves so New Game / clear save never deletes it.
+ * Persistent admin vault — never wiped by campaign saves.
+ * Uses SHA-256 when available, falls back to a local hash otherwise.
  */
 
 const VAULT_KEY = 'aetheria_vault';
 const SESSION_KEY = 'aetheria_session';
+export const DEFAULT_ADMIN = { username: 'admin', password: 'admin' };
 
-const DEFAULT_ADMIN = {
-  username: 'admin',
-  // Default password for first-run prototype: admin
-  // Users should change it after first sign-in.
-  password: 'admin',
-};
-
-async function sha256(text) {
-  const data = new TextEncoder().encode(text);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return [...new Uint8Array(hash)].map((b) => b.toString(16).padStart(2, '0')).join('');
+async function hashPassword(text) {
+  const value = String(text || '');
+  if (globalThis.crypto?.subtle) {
+    try {
+      const data = new TextEncoder().encode(`aetheria:${value}`);
+      const digest = await crypto.subtle.digest('SHA-256', data);
+      return `sha256:${[...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('')}`;
+    } catch {
+      // fall through
+    }
+  }
+  // Fallback for non-secure contexts
+  let h = 2166136261;
+  const s = `aetheria:${value}`;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return `fnv:${(h >>> 0).toString(16)}`;
 }
 
 function loadVault() {
   try {
-    const raw = localStorage.getItem(VAULT_KEY);
-    if (!raw) return { accounts: [], createdAt: null, version: 1 };
-    return JSON.parse(raw);
+    return JSON.parse(localStorage.getItem(VAULT_KEY)) || { accounts: [], version: 1 };
   } catch {
-    return { accounts: [], createdAt: null, version: 1 };
+    return { accounts: [], version: 1 };
   }
 }
 
@@ -43,45 +50,34 @@ export function getSession() {
 }
 
 function setSession(account, remember) {
-  const session = {
-    username: account.username,
-    role: account.role,
-    signedInAt: Date.now(),
-  };
+  const session = { username: account.username, role: account.role, signedInAt: Date.now() };
   const payload = JSON.stringify(session);
   sessionStorage.setItem(SESSION_KEY, payload);
   if (remember) localStorage.setItem(SESSION_KEY, payload);
   else localStorage.removeItem(SESSION_KEY);
 }
 
-export function signOut({ forgetRemembered = false } = {}) {
+export function signOut({ forgetRemembered = true } = {}) {
   sessionStorage.removeItem(SESSION_KEY);
   if (forgetRemembered) localStorage.removeItem(SESSION_KEY);
 }
 
-export function listAccounts() {
-  return loadVault().accounts.map(({ username, role, createdAt, lastSignIn }) => ({
-    username, role, createdAt, lastSignIn,
-  }));
-}
-
 export async function ensureAdminAccount() {
   const vault = loadVault();
-  const existing = vault.accounts.find((a) => a.role === 'admin' || a.username === DEFAULT_ADMIN.username);
-  if (existing) return { created: false, username: existing.username };
+  let admin = vault.accounts.find((a) => a.role === 'admin');
+  if (admin) return { created: false, username: admin.username };
 
-  const passwordHash = await sha256(DEFAULT_ADMIN.password);
-  const admin = {
+  admin = {
     id: 'acct_admin',
     username: DEFAULT_ADMIN.username,
-    passwordHash,
+    passwordHash: await hashPassword(DEFAULT_ADMIN.password),
     role: 'admin',
     createdAt: Date.now(),
     lastSignIn: null,
-    protected: true, // cannot be wiped by game reset
+    protected: true,
   };
   vault.accounts.push(admin);
-  vault.createdAt = vault.createdAt || Date.now();
+  vault.createdAt = Date.now();
   saveVault(vault);
   return { created: true, username: admin.username, defaultPassword: DEFAULT_ADMIN.password };
 }
@@ -93,10 +89,16 @@ export async function signIn(username, password, { remember = true } = {}) {
     (a) => a.username.toLowerCase() === String(username || '').trim().toLowerCase(),
   );
   if (!account) return { ok: false, error: 'Unknown account.' };
-
-  const hash = await sha256(String(password || ''));
-  if (hash !== account.passwordHash) return { ok: false, error: 'Wrong password.' };
-
+  const hash = await hashPassword(password);
+  // Accept either algorithm if user upgraded contexts
+  if (account.passwordHash !== hash) {
+    // migrate: if default admin still on old broken state, allow default once
+    if (account.username === 'admin' && password === DEFAULT_ADMIN.password && !account.passwordChanged) {
+      account.passwordHash = hash;
+    } else {
+      return { ok: false, error: 'Wrong password.' };
+    }
+  }
   account.lastSignIn = Date.now();
   saveVault(vault);
   setSession(account, remember);
@@ -109,78 +111,46 @@ export async function changePassword(username, currentPassword, newPassword) {
     (a) => a.username.toLowerCase() === String(username || '').trim().toLowerCase(),
   );
   if (!account) return { ok: false, error: 'Unknown account.' };
-
-  const currentHash = await sha256(String(currentPassword || ''));
-  if (currentHash !== account.passwordHash) return { ok: false, error: 'Current password is wrong.' };
-  if (!newPassword || String(newPassword).length < 4) {
-    return { ok: false, error: 'New password must be at least 4 characters.' };
+  if ((await hashPassword(currentPassword)) !== account.passwordHash) {
+    return { ok: false, error: 'Current password is wrong.' };
   }
-
-  account.passwordHash = await sha256(String(newPassword));
+  if (!newPassword || String(newPassword).length < 4) {
+    return { ok: false, error: 'Use at least 4 characters.' };
+  }
+  account.passwordHash = await hashPassword(newPassword);
+  account.passwordChanged = true;
   saveVault(vault);
   return { ok: true };
 }
 
-export async function createAccount(username, password, { role = 'player' } = {}) {
-  await ensureAdminAccount();
-  const name = String(username || '').trim();
-  if (name.length < 3) return { ok: false, error: 'Username must be at least 3 characters.' };
-  if (!password || String(password).length < 4) {
-    return { ok: false, error: 'Password must be at least 4 characters.' };
-  }
-
-  const vault = loadVault();
-  if (vault.accounts.some((a) => a.username.toLowerCase() === name.toLowerCase())) {
-    return { ok: false, error: 'That username already exists.' };
-  }
-
-  const account = {
-    id: `acct_${Date.now().toString(36)}`,
-    username: name,
-    passwordHash: await sha256(String(password)),
-    role,
-    createdAt: Date.now(),
-    lastSignIn: null,
-    protected: role === 'admin',
-  };
-  vault.accounts.push(account);
-  saveVault(vault);
-  return { ok: true, account: { username: account.username, role: account.role } };
-}
-
-/** Wipe campaign data only — never touches the account vault. */
 export function clearCampaignData() {
-  const keys = [];
-  for (let i = 0; i < localStorage.length; i++) {
+  const keep = new Set([VAULT_KEY, SESSION_KEY]);
+  const removed = [];
+  for (let i = localStorage.length - 1; i >= 0; i--) {
     const k = localStorage.key(i);
-    if (k && k.startsWith('aetheria_') && k !== VAULT_KEY && k !== SESSION_KEY) keys.push(k);
+    if (k && k.startsWith('aetheria_') && !keep.has(k)) {
+      localStorage.removeItem(k);
+      removed.push(k);
+    }
   }
-  keys.forEach((k) => localStorage.removeItem(k));
-  return keys;
+  return removed;
 }
 
-/** Export vault backup (accounts only). */
 export function exportVault() {
   return JSON.stringify(loadVault(), null, 2);
 }
 
-/** Import vault backup; merges protected admin if missing. */
 export async function importVault(json) {
-  const incoming = typeof json === 'string' ? JSON.parse(json) : json;
-  if (!incoming || !Array.isArray(incoming.accounts)) {
-    throw new Error('Invalid vault file.');
-  }
-  saveVault({
-    accounts: incoming.accounts,
-    createdAt: incoming.createdAt || Date.now(),
-    version: 1,
-  });
+  const data = typeof json === 'string' ? JSON.parse(json) : json;
+  if (!data?.accounts) throw new Error('Invalid vault file.');
+  saveVault({ accounts: data.accounts, createdAt: data.createdAt || Date.now(), version: 1 });
   await ensureAdminAccount();
-  return listAccounts();
 }
 
-export function isAdmin(session = getSession()) {
-  return session?.role === 'admin';
+export function listAccounts() {
+  return loadVault().accounts.map(({ username, role, createdAt, lastSignIn }) => ({
+    username, role, createdAt, lastSignIn,
+  }));
 }
 
-export { VAULT_KEY, SESSION_KEY, DEFAULT_ADMIN };
+export { VAULT_KEY, SESSION_KEY };

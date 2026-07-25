@@ -1,6 +1,6 @@
 # Kingdom Builder — The World of Aetheria
 
-Plain **HTML / CSS / JS** prototype (no build step). Use this to playtest and squash bugs before a fuller game engine.
+Plain **HTML / CSS / JS** strategy prototype (no build step). Bigger map, clearer UI, persistent admin login.
 
 ## Run
 
@@ -9,53 +9,36 @@ cd aetheria
 python3 -m http.server 8080
 ```
 
-Then open:
-
 - Landing: http://localhost:8080/
 - Game: http://localhost:8080/game.html
 
-Or: `npm start` (same server).
+> Needs a local server (ES modules). Don’t use `file://`.
 
-> ES modules need a local server — don’t open the HTML via `file://`.
+## What’s in this rebuild
 
-## Layout
+- **80×56** procedural world, fog of war, seasons
+- Cities, buildings, units, tech tree, diplomacy, wonders, missions
+- Exploration sites to delve, world events, chronicle
+- Minimap, camera zoom/pan, tutorial tips, toast feedback, UI sounds
+- Multiple save slots + autosave
+- Several victory paths (military, wonder, diplomacy, exploration, wealth)
+- **Persistent admin account** (`aetheria_vault`) — never wiped by New Campaign
 
-```
-aetheria/
-├── index.html          # landing
-├── game.html           # playable game
-├── css/
-│   ├── landing.css
-│   └── game.css
-├── js/
-│   ├── main.js         # game bootstrap
-│   ├── state.js
-│   ├── world.js
-│   ├── systems.js
-│   ├── render.js
-│   ├── ui.js
-│   ├── data.js
-│   ├── utils.js
-│   └── landing.js
-└── scripts/smoke.mjs   # optional headless checks
-```
+## Default admin
 
-## Play
+- Username: `admin`
+- Password: `admin`  
+  Change it under Menu → Account after first login.
 
-1. Sign in (first run creates a protected **admin** account: `admin` / `admin`)
-2. Move the **Scout** (click tile or arrow keys)
-3. **Found City** with the Settler (`F` or City panel)
-4. Build / train from **City**
-5. Gather deposits with a **Worker** (`G`)
-6. **End Turn**
+## Controls
 
-### Admin account persistence
+| Key / action | Effect |
+|---|---|
+| Click unit / tile | Select / step move |
+| WASD or arrows | Move |
+| F | Found city (Settler) |
+| G | Gather (Worker) |
+| Tab | Next unit |
+| Enter | End turn |
 
-Accounts live in `localStorage` key `aetheria_vault`, separate from campaign saves (`aetheria_save`).
-
-- **New Campaign** and **Clear campaign data** never delete the admin account
-- **Remember me** keeps you signed in on this browser
-- Menu → **Account** to change password
-- Sign-in screen can **Export / Import** the account vault as JSON backup
-
-Optional: `npm run smoke` (needs Node) for a quick systems check.
+Optional: `npm run smoke`
