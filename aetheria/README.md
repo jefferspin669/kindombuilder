@@ -42,10 +42,20 @@ aetheria/
 
 ## Play
 
-1. Move the **Scout** (click tile or arrow keys)
-2. **Found City** with the Settler (`F` or City panel)
-3. Build / train from **City**
-4. Gather deposits with a **Worker** (`G`)
-5. **End Turn**
+1. Sign in (first run creates a protected **admin** account: `admin` / `admin`)
+2. Move the **Scout** (click tile or arrow keys)
+3. **Found City** with the Settler (`F` or City panel)
+4. Build / train from **City**
+5. Gather deposits with a **Worker** (`G`)
+6. **End Turn**
+
+### Admin account persistence
+
+Accounts live in `localStorage` key `aetheria_vault`, separate from campaign saves (`aetheria_save`).
+
+- **New Campaign** and **Clear campaign data** never delete the admin account
+- **Remember me** keeps you signed in on this browser
+- Menu → **Account** to change password
+- Sign-in screen can **Export / Import** the account vault as JSON backup
 
 Optional: `npm run smoke` (needs Node) for a quick systems check.

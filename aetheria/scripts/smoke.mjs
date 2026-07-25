@@ -4,6 +4,34 @@
 import { newGame, foundCity, canAfford } from '../js/state.js';
 import { endTurn, moveUnit, queueBuilding } from '../js/systems.js';
 import { buildTechTree, WONDERS, SPACE_BODIES } from '../js/data.js';
+import {
+  ensureAdminAccount,
+  signIn,
+  clearCampaignData,
+  listAccounts,
+  VAULT_KEY,
+} from '../js/auth.js';
+
+// Minimal localStorage polyfill for Node smoke
+if (typeof globalThis.localStorage === 'undefined') {
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+    get length() { return store.size; },
+    key: (i) => [...store.keys()][i] ?? null,
+  };
+}
+if (typeof globalThis.sessionStorage === 'undefined') {
+  const store = new Map();
+  globalThis.sessionStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+  };
+}
+// crypto.subtle exists in Node 22
 
 let failed = 0;
 function assert(cond, msg) {
@@ -59,6 +87,18 @@ state.player.fantasy = true;
 endTurn(state);
 assert(state.player.fantasy === true, 'fantasy toggle state');
 assert(canAfford({ gold: 10 }, { gold: 5 }), 'canAfford');
+
+const boot = await ensureAdminAccount();
+assert(boot.username === 'admin', 'admin account exists');
+localStorage.setItem('aetheria_save', '{"keep":false}');
+const removed = clearCampaignData();
+assert(removed.includes('aetheria_save'), 'campaign clear removes save');
+assert(localStorage.getItem(VAULT_KEY), 'admin vault survives campaign clear');
+const again = await ensureAdminAccount();
+assert(again.created === false, 'admin not recreated as new wipe');
+assert(listAccounts().some((a) => a.role === 'admin'), 'admin listed after clear');
+const login = await signIn('admin', 'admin', { remember: false });
+assert(login.ok, 'admin can sign in');
 
 if (failed) {
   console.error(`\n${failed} smoke checks failed`);

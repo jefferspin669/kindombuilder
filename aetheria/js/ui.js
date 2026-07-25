@@ -56,6 +56,36 @@ export function bindUI(app) {
   document.getElementById('btn-save').onclick = () => app.save();
   document.getElementById('btn-load').onclick = () => app.load();
   document.getElementById('btn-export').onclick = () => app.exportSave();
+  document.getElementById('btn-clear-campaign')?.addEventListener('click', () => app.clearCampaign());
+  document.getElementById('btn-sign-out')?.addEventListener('click', () => app.signOut());
+  document.getElementById('btn-account')?.addEventListener('click', () => {
+    const session = app.getSession?.();
+    const summary = document.getElementById('account-summary');
+    if (summary && session) {
+      summary.textContent = `Signed in as ${session.username} (${session.role}). This account persists across campaigns.`;
+    }
+    document.getElementById('menu-modal').classList.add('hidden');
+    document.getElementById('account-modal')?.classList.remove('hidden');
+  });
+  document.getElementById('btn-close-account')?.addEventListener('click', () => {
+    document.getElementById('account-modal')?.classList.add('hidden');
+  });
+  document.getElementById('btn-change-pw')?.addEventListener('click', async () => {
+    const err = document.getElementById('pw-error');
+    const result = await app.changePassword(
+      document.getElementById('pw-current').value,
+      document.getElementById('pw-new').value,
+    );
+    if (!result.ok) {
+      err.hidden = false;
+      err.textContent = result.error;
+      return;
+    }
+    err.hidden = true;
+    document.getElementById('pw-current').value = '';
+    document.getElementById('pw-new').value = '';
+    alert('Password updated. Admin account remains saved.');
+  });
 
   document.getElementById('btn-victory-close').onclick = () => {
     document.getElementById('victory-modal').classList.add('hidden');
