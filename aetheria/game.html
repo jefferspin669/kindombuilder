@@ -13,7 +13,29 @@
     <link rel="stylesheet" href="css/game.css" />
   </head>
   <body>
-    <div id="app">
+    <!-- Click to start -->
+    <div id="start-screen" class="start-screen">
+      <div class="start-card">
+        <p class="start-brand">Aetheria</p>
+        <h1>Kingdom Builder</h1>
+        <p class="start-lede">
+          Every kingdom has a story. Every choice shapes history.
+        </p>
+        <div class="start-actions">
+          <button type="button" id="btn-begin" class="btn start-primary">Begin Reign</button>
+          <button type="button" id="btn-continue" class="btn ghost hidden">Continue Save</button>
+        </div>
+        <p id="start-status" class="start-status">Click <strong>Begin Reign</strong> to start the game.</p>
+        <p id="start-error" class="start-error hidden"></p>
+        <p class="start-hint">
+          Tip: run from a local server — <code>python3 -m http.server 8080</code>
+          then open this page.
+        </p>
+        <a class="start-back" href="index.html">← Back to landing</a>
+      </div>
+    </div>
+
+    <div id="app" class="hidden">
       <header class="bar">
         <a class="logo" href="index.html">Aetheria</a>
         <div id="resources" class="resources"></div>
@@ -88,8 +110,7 @@
           <li><b>WASD / Arrows</b> move · <b>Tab</b> next unit · <b>Enter</b> end turn</li>
           <li><b>F</b> found city (Settler) · <b>G</b> gather (Worker)</li>
           <li>Build farms & mills, train troops, research tech, deal with rivals</li>
-          <li>Delve ruins for lore · complete missions · chase a victory path</li>
-          <li>Plain HTML/CSS/JS testing build — no login required</li>
+          <li>Delve ruins · complete missions · chase a victory path</li>
         </ul>
         <button id="btn-close-help" class="btn">Close</button>
       </div>
@@ -104,5 +125,22 @@
     </div>
 
     <script type="module" src="js/main.js"></script>
+    <script>
+      // Visible fallback if modules fail to load (e.g. opened as file://)
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          if (!window.__AETHERIA_READY__) {
+            const err = document.getElementById('start-error');
+            const status = document.getElementById('start-status');
+            if (err) {
+              err.classList.remove('hidden');
+              err.textContent =
+                'Game scripts did not load. From the aetheria folder run: python3 -m http.server 8080 — then open http://localhost:8080/game.html';
+            }
+            if (status) status.textContent = 'Waiting for local server…';
+          }
+        }, 800);
+      });
+    </script>
   </body>
 </html>

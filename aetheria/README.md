@@ -1,6 +1,6 @@
 # Kingdom Builder — The World of Aetheria
 
-Plain **HTML / CSS / JavaScript** testing build. No login, no build step.
+Plain **HTML / CSS / JavaScript** testing build.
 
 ## Run
 
@@ -9,21 +9,29 @@ cd aetheria
 python3 -m http.server 8080
 ```
 
-- Landing: http://localhost:8080/
-- Game: http://localhost:8080/game.html
+Then open:
 
-> ES modules need a local server — don’t open via `file://`.
+- http://localhost:8080/ — landing page
+- http://localhost:8080/game.html — click **Begin Reign** to start
+
+Or from the landing page, click **Begin Reign** / **Play**.
+
+> Must use a local server (not `file://`) so JavaScript modules load.
 
 ## Play
 
-Open the game page and start immediately. Use Menu for New / Save / Load.
+1. Click **Begin Reign**
+2. Move the Scout (click tiles or WASD)
+3. Select Settler → **F** or Found City
+4. Build / train from the City panel
+5. **End Turn** (or Enter)
 
 | Control | Action |
 |---|---|
-| Click unit / tile | Select / step move |
-| WASD or arrows | Move |
-| F | Found city (Settler) |
-| G | Gather (Worker) |
+| Click unit / tile | Select / step |
+| WASD / arrows | Move |
+| F | Found city |
+| G | Gather |
 | Tab | Next unit |
 | Enter | End turn |
 
