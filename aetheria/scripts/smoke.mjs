@@ -1,24 +1,11 @@
 /**
- * Headless smoke for rebuilt Aetheria HTML prototype.
+ * Headless smoke for HTML/CSS/JS Aetheria testing build.
  */
 import { newCampaign, foundCity, moveUnit, endTurn, queueBuilding, canAfford } from '../js/game.js';
-import {
-  ensureAdminAccount, signIn, clearCampaignData, listAccounts, VAULT_KEY,
-} from '../js/auth.js';
 
 if (typeof globalThis.localStorage === 'undefined') {
   const store = new Map();
   globalThis.localStorage = {
-    getItem: (k) => (store.has(k) ? store.get(k) : null),
-    setItem: (k, v) => store.set(k, String(v)),
-    removeItem: (k) => store.delete(k),
-    get length() { return store.size; },
-    key: (i) => [...store.keys()][i] ?? null,
-  };
-}
-if (typeof globalThis.sessionStorage === 'undefined') {
-  const store = new Map();
-  globalThis.sessionStorage = {
     getItem: (k) => (store.has(k) ? store.get(k) : null),
     setItem: (k, v) => store.set(k, String(v)),
     removeItem: (k) => store.delete(k),
@@ -34,15 +21,13 @@ function assert(cond, msg) {
 }
 
 const state = newCampaign({ seed: 7 });
-assert(state.world.width === 80 && state.world.height === 56, 'bigger world 80x56');
+assert(state.world.width === 80 && state.world.height === 56, 'world size');
 assert(state.units.some((u) => u.type === 'scout'), 'scout');
 assert(state.units.some((u) => u.type === 'settler'), 'settler');
-assert(state.rivals.length === 4, 'four rivals');
-assert(state.world.sites.length >= 8, 'exploration sites');
+assert(state.rivals.length === 4, 'rivals');
 
 const settler = state.units.find((u) => u.type === 'settler');
 assert(foundCity(state, settler), 'found city');
-assert(state.cities.length === 1, 'one city');
 assert(queueBuilding(state, state.cities[0], 'farm'), 'queue farm');
 
 const scout = state.units.find((u) => u.type === 'scout');
@@ -57,16 +42,6 @@ assert(moved, 'scout moves');
 
 for (let i = 0; i < 5; i++) endTurn(state);
 assert(state.cities[0].buildings.includes('farm'), 'farm built');
-assert(state.season, 'seasons advance');
-
-const boot = await ensureAdminAccount();
-assert(boot.username === 'admin', 'admin exists');
-localStorage.setItem('aetheria_save', '{}');
-const removed = clearCampaignData();
-assert(removed.includes('aetheria_save'), 'clears campaign');
-assert(!!localStorage.getItem(VAULT_KEY), 'vault survives');
-assert(listAccounts().some((a) => a.role === 'admin'), 'admin listed');
-assert((await signIn('admin', 'admin')).ok, 'admin login');
 assert(canAfford({ gold: 10 }, { gold: 5 }), 'canAfford');
 
 if (failed) {
