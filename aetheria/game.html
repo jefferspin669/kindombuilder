@@ -10,12 +10,49 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/src/styles/game.css" />
+    <link rel="stylesheet" href="css/game.css" />
   </head>
   <body>
-    <div id="app">
+    <div id="auth-gate" class="auth-gate">
+      <div class="auth-card">
+        <p class="auth-brand">Aetheria</p>
+        <h1>Sign in to reign</h1>
+        <p class="auth-note">
+          Your <strong>admin</strong> account is stored in a protected vault on this browser.
+          New campaigns and clearing saves will not delete it.
+        </p>
+        <form id="auth-form">
+          <label>
+            Username
+            <input id="auth-username" name="username" autocomplete="username" required />
+          </label>
+          <label>
+            Password
+            <input id="auth-password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <label class="auth-check">
+            <input id="auth-remember" type="checkbox" checked />
+            Remember me on this browser
+          </label>
+          <p id="auth-error" class="auth-error" hidden></p>
+          <p id="auth-hint" class="auth-hint"></p>
+          <button type="submit" class="btn">Sign in</button>
+        </form>
+        <details class="auth-advanced">
+          <summary>Account tools</summary>
+          <button type="button" id="btn-export-vault" class="ghost">Export account vault</button>
+          <label class="file-btn ghost">
+            Import account vault
+            <input id="import-vault" type="file" accept="application/json,.json" hidden />
+          </label>
+        </details>
+      </div>
+    </div>
+
+    <div id="app" class="hidden">
       <header class="bar">
-        <a class="logo" href="/">Aetheria</a>
+        <a class="logo" href="index.html">Aetheria</a>
+        <span class="account-chip" id="account-chip" title="Signed-in account"></span>
         <div class="resources" id="resources"></div>
         <div class="meta">
           <span id="season-label">Spring</span>
@@ -41,7 +78,7 @@
               <button data-zoom="realm">Realm</button>
               <button data-zoom="street">Street</button>
             </div>
-            <p id="map-hint">Explore with the Scout · Found a city with the Settler</p>
+            <p id="map-hint">Explore with the Scout · Found a city with the Settler (F)</p>
           </div>
         </main>
 
@@ -61,9 +98,26 @@
         <button id="btn-save">Save</button>
         <button id="btn-load">Load</button>
         <button id="btn-export">Export JSON</button>
+        <button id="btn-clear-campaign">Clear campaign data</button>
+        <button id="btn-account">Account</button>
+        <button id="btn-sign-out">Sign out</button>
         <button id="btn-roadmap">Roadmap (Stages 1–34)</button>
         <button id="btn-close-menu">Close</button>
         <pre id="roadmap" class="hidden"></pre>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="account-modal">
+      <div class="modal-card">
+        <h2>Account</h2>
+        <p id="account-summary" class="muted"></p>
+        <p class="muted">Admin vault key: <code>aetheria_vault</code> — never wiped by New Campaign.</p>
+        <h3>Change password</h3>
+        <label>Current password <input id="pw-current" type="password" /></label>
+        <label>New password <input id="pw-new" type="password" /></label>
+        <p id="pw-error" class="auth-error" hidden></p>
+        <button id="btn-change-pw">Update password</button>
+        <button id="btn-close-account" class="ghost">Close</button>
       </div>
     </div>
 
@@ -76,6 +130,6 @@
       </div>
     </div>
 
-    <script type="module" src="/src/game/main.js"></script>
+    <script type="module" src="js/main.js"></script>
   </body>
 </html>

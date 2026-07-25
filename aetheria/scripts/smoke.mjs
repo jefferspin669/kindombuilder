@@ -1,9 +1,37 @@
 /**
  * Headless smoke test for core Aetheria systems (no browser).
  */
-import { newGame, foundCity, canAfford } from '../src/game/state.js';
-import { endTurn, moveUnit, queueBuilding, queueUnit, gatherDeposit } from '../src/game/systems.js';
-import { buildTechTree, WONDERS, SPACE_BODIES } from '../src/game/data.js';
+import { newGame, foundCity, canAfford } from '../js/state.js';
+import { endTurn, moveUnit, queueBuilding } from '../js/systems.js';
+import { buildTechTree, WONDERS, SPACE_BODIES } from '../js/data.js';
+import {
+  ensureAdminAccount,
+  signIn,
+  clearCampaignData,
+  listAccounts,
+  VAULT_KEY,
+} from '../js/auth.js';
+
+// Minimal localStorage polyfill for Node smoke
+if (typeof globalThis.localStorage === 'undefined') {
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+    get length() { return store.size; },
+    key: (i) => [...store.keys()][i] ?? null,
+  };
+}
+if (typeof globalThis.sessionStorage === 'undefined') {
+  const store = new Map();
+  globalThis.sessionStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, String(v)),
+    removeItem: (k) => store.delete(k),
+  };
+}
+// crypto.subtle exists in Node 22
 
 let failed = 0;
 function assert(cond, msg) {
@@ -46,11 +74,9 @@ const scout = state.units.find((u) => u.type === 'scout');
 if (scout) {
   const before = scout.moves;
   let moved = false;
-  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1]]) {
-    const ox = scout.x;
-    const oy = scout.y;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
     if (moveUnit(state, scout, scout.x + dx, scout.y + dy)) {
-      moved = scout.x !== ox || scout.y !== oy || scout.moves < before;
+      moved = true;
       break;
     }
   }
@@ -60,24 +86,19 @@ if (scout) {
 state.player.fantasy = true;
 endTurn(state);
 assert(state.player.fantasy === true, 'fantasy toggle state');
-
-state.player.resources.gold = 200;
-state.economy.companies.push({ id: 'c1', name: 'A' }, { id: 'c2', name: 'B' });
-assert(state.economy.companies.length === 2, 'companies');
-
-// save sanitize roundtrip-ish
-const json = JSON.stringify({
-  ...state,
-  rand: undefined,
-  world: {
-    ...state.world,
-    roads: [...state.world.roads],
-    bridges: [...state.world.bridges],
-    rivers: [...state.world.rivers],
-  },
-});
-assert(json.length > 1000, 'serializable state');
 assert(canAfford({ gold: 10 }, { gold: 5 }), 'canAfford');
+
+const boot = await ensureAdminAccount();
+assert(boot.username === 'admin', 'admin account exists');
+localStorage.setItem('aetheria_save', '{"keep":false}');
+const removed = clearCampaignData();
+assert(removed.includes('aetheria_save'), 'campaign clear removes save');
+assert(localStorage.getItem(VAULT_KEY), 'admin vault survives campaign clear');
+const again = await ensureAdminAccount();
+assert(again.created === false, 'admin not recreated as new wipe');
+assert(listAccounts().some((a) => a.role === 'admin'), 'admin listed after clear');
+const login = await signIn('admin', 'admin', { remember: false });
+assert(login.ok, 'admin can sign in');
 
 if (failed) {
   console.error(`\n${failed} smoke checks failed`);

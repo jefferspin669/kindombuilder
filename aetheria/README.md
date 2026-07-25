@@ -1,31 +1,61 @@
 # Kingdom Builder — The World of Aetheria
 
-Turn-based living-world strategy: found cities, govern citizens, weave diplomacy, wage war, and leave a chronicle the map remembers.
+Plain **HTML / CSS / JS** prototype (no build step). Use this to playtest and squash bugs before a fuller game engine.
 
 ## Run
 
 ```bash
 cd aetheria
-npm install
-npm run dev
+python3 -m http.server 8080
 ```
 
-- Landing: http://localhost:5173/
-- Game: http://localhost:5173/game.html
+Then open:
 
-## Scripts
+- Landing: http://localhost:8080/
+- Game: http://localhost:8080/game.html
 
-- `npm run smoke` — headless systems check
-- `npm run build` — production build
+Or: `npm start` (same server).
 
-## Play (Stage 1 loop)
+> ES modules need a local server — don’t open the HTML via `file://`.
 
-1. Move the **Scout** (click tile or arrow keys) to clear fog
-2. **Found City** with the Settler (`F` or City panel)
-3. Build / train from the **City** tab
-4. Gather deposits with a **Worker** (`G`)
-5. Fight Ashen Raiders · **End Turn**
+## Layout
 
-## Systems (Stages 1–34)
+```
+aetheria/
+├── index.html          # landing
+├── game.html           # playable game
+├── css/
+│   ├── landing.css
+│   └── game.css
+├── js/
+│   ├── main.js         # game bootstrap
+│   ├── state.js
+│   ├── world.js
+│   ├── systems.js
+│   ├── render.js
+│   ├── ui.js
+│   ├── data.js
+│   ├── utils.js
+│   └── landing.js
+└── scripts/smoke.mjs   # optional headless checks
+```
 
-Realm, Court, Diplo, War, Econ, Explore, Tech (~2020 nodes), Wonders, Chronicle, Myth toggle, Space, Multi hotseat, Mods, Legacy (+500y), Lords, Look, Events, Missions, Culture, Seasons, Bonds, Crime, Faith, Wildlife, Great People, Natural Economy chains, Victory paths, Living World Score.
+## Play
+
+1. Sign in (first run creates a protected **admin** account: `admin` / `admin`)
+2. Move the **Scout** (click tile or arrow keys)
+3. **Found City** with the Settler (`F` or City panel)
+4. Build / train from **City**
+5. Gather deposits with a **Worker** (`G`)
+6. **End Turn**
+
+### Admin account persistence
+
+Accounts live in `localStorage` key `aetheria_vault`, separate from campaign saves (`aetheria_save`).
+
+- **New Campaign** and **Clear campaign data** never delete the admin account
+- **Remember me** keeps you signed in on this browser
+- Menu → **Account** to change password
+- Sign-in screen can **Export / Import** the account vault as JSON backup
+
+Optional: `npm run smoke` (needs Node) for a quick systems check.
