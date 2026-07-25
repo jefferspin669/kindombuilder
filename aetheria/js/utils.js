@@ -1,6 +1,6 @@
 export function mulberry32(seed) {
   let a = seed >>> 0;
-  return function rand() {
+  return () => {
     a |= 0;
     a = (a + 0x6d2b79f5) | 0;
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
@@ -32,6 +32,7 @@ export function deepClone(obj) {
 const FIRST = [
   'Aldric', 'Elara', 'Mira', 'Kael', 'Soren', 'Lyra', 'Marcus', 'Tamsin',
   'Riven', 'Nora', 'Bram', 'Iskra', 'Oren', 'Vessa', 'Jori', 'Pella',
+  'Cedric', 'Astrid', 'Rowan', 'Freya', 'Dorian', 'Selene',
 ];
 const LAST = [
   'Ashford', 'Riverwatch', 'Stonehelm', 'Goldmere', 'Nightbloom', 'Ironvale',
@@ -42,18 +43,17 @@ export function personName(rand) {
   return `${pick(rand, FIRST)} ${pick(rand, LAST)}`;
 }
 
-export function houseName(rand) {
-  return `House ${pick(rand, LAST)}`;
-}
-
-export function log(state, msg, category = 'general') {
-  state.log.unshift({ turn: state.turn, year: state.year, msg, category });
-  if (state.log.length > 200) state.log.length = 200;
-  chronicle(state, msg, category);
-}
-
-export function chronicle(state, text, category = 'general') {
-  const year = state.calendarYear ?? state.year;
-  state.chronicle.push({ year, turn: state.turn, text, category });
-  if (state.chronicle.length > 2000) state.chronicle.splice(0, 200);
+export function toast(msg, kind = 'info') {
+  if (typeof document === 'undefined') return;
+  const host = document.getElementById('toasts');
+  if (!host) return;
+  const el = document.createElement('div');
+  el.className = `toast toast-${kind}`;
+  el.textContent = msg;
+  host.appendChild(el);
+  setTimeout(() => el.classList.add('show'), 10);
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, 3200);
 }

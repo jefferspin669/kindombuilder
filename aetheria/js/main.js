@@ -1,206 +1,150 @@
-import { newGame, foundCity } from './state.js';
-import { moveUnit, endTurn } from './systems.js';
-import { renderMap } from './render.js';
-import { bindUI, refreshAll } from './ui.js';
-import { mulberry32, log, chronicle, uid } from './utils.js';
 import {
-  ensureAdminAccount,
-  getSession,
-  signIn,
-  signOut as authSignOut,
-  changePassword,
-  clearCampaignData,
-  exportVault,
-  importVault,
-  DEFAULT_ADMIN,
+  newCampaign, serialize, revive, foundCity, moveUnit, endTurn,
+} from './game.js';
+import { bindUI, refreshAll } from './ui.js';
+import {
+  ensureAdminAccount, getSession, signIn, signOut as authSignOut,
+  changePassword, clearCampaignData, exportVault, importVault, DEFAULT_ADMIN,
 } from './auth.js';
+import { setAudioEnabled, isAudioEnabled, beep } from './audio.js';
+import { toast } from './utils.js';
 
 const canvas = document.getElementById('map');
 const stateRef = { current: null };
 let uiBound = false;
 
-function redraw() {
-  if (!stateRef.current) return;
-  renderMap(canvas, stateRef.current);
+function fitCanvas() {
+  const wrap = document.querySelector('.map-stage');
+  if (!wrap) return;
+  const w = Math.min(1100, wrap.clientWidth - 8);
+  const h = Math.min(720, Math.max(420, window.innerHeight - 220));
+  canvas.width = Math.floor(w);
+  canvas.height = Math.floor(h);
 }
 
 function start(opts = {}) {
-  const massive = opts.massive || stateRef.current?.multi?.wantMassive;
-  stateRef.current = newGame({
+  fitCanvas();
+  stateRef.current = newCampaign({
     seed: opts.seed,
-    width: massive ? 96 : 64,
-    height: massive ? 66 : 44,
-    massive,
+    width: 80,
+    height: 56,
     kingdomName: opts.kingdomName,
   });
-  if (opts.legacy) applyLegacy(stateRef.current, opts.legacy);
   refreshAll(app);
-  updateAccountChip();
+  updateChip();
 }
 
-function applyLegacy(state, era) {
-  state.calendarYear = era.year + 500;
-  state.legacy.eras = era.allEras || [era];
-  for (const mem of era.landmarks || []) {
-    const t = state.world.tiles[mem.y * state.world.width + mem.x];
-    if (t) {
-      t.type = 'ruins';
-      t.fog = false;
-    }
-    state.world.sites.push({
-      id: uid('legacy'),
-      kind: mem.fate === 'a powerful ally in memory' ? 'secret_civilization' : 'lost_city',
-      x: mem.x,
-      y: mem.y,
-      discovered: true,
-      delved: false,
-      progress: 0,
-      risk: 0.2,
-      loot: { gold: 30, lore: 25 },
-      legacy: true,
-    });
-  }
-  chronicle(state, `A new age dawns +500 years after ${era.name}. The map remembers.`, 'legacy');
-  log(state, 'Legacy campaign begun — ruins and legends mark the old world.', 'legacy');
+function save(slot = 'autosave') {
+  const key = slot === 'autosave' ? 'aetheria_save' : `aetheria_slot_${slot}`;
+  localStorage.setItem(key, JSON.stringify(serialize(stateRef.current)));
+  toast(`Saved (${slot})`, 'good');
+  beep('good');
 }
 
-function save() {
-  const s = stateRef.current;
-  // Campaign save only — vault is untouched
-  localStorage.setItem('aetheria_save', JSON.stringify(sanitize(s)));
-  log(s, 'Game saved.', 'system');
-  refreshAll(app);
-}
-
-function load() {
-  const raw = localStorage.getItem('aetheria_save');
+function load(slot = 'autosave') {
+  const key = slot === 'autosave' ? 'aetheria_save' : `aetheria_slot_${slot}`;
+  const raw = localStorage.getItem(key);
   if (!raw) {
-    alert('No save found.');
+    toast('No save in that slot.', 'warn');
     return;
   }
-  const data = JSON.parse(raw);
-  data.rand = mulberry32(data.seed + data.turn);
-  data.world.roads = new Set(data.world.roads || []);
-  data.world.bridges = new Set(data.world.bridges || []);
-  data.world.rivers = new Set(data.world.rivers || []);
-  stateRef.current = data;
-  log(data, 'Game loaded.', 'system');
+  stateRef.current = revive(JSON.parse(raw));
+  fitCanvas();
   refreshAll(app);
+  toast(`Loaded (${slot})`, 'good');
 }
 
-function exportSave() {
-  const data = sanitize(stateRef.current);
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `aetheria-year-${data.year}.json`;
-  a.click();
-}
-
-function sanitize(state) {
-  const copy = JSON.parse(JSON.stringify({
-    ...state,
-    rand: undefined,
-    world: {
-      ...state.world,
-      roads: [...(state.world.roads || [])],
-      bridges: [...(state.world.bridges || [])],
-      rivers: [...(state.world.rivers || [])],
-    },
-  }));
-  delete copy.rand;
-  return copy;
-}
-
-function sealAge() {
-  const s = stateRef.current;
-  const fate = pickFate(s);
-  const era = {
-    id: uid('era'),
-    name: s.player.name,
-    year: s.calendarYear,
-    fate,
-    landmarks: s.cities.map((c) => ({ x: c.x, y: c.y, name: c.name, fate })),
-    wonders: s.wonders.filter((w) => w.owner === 'player').map((w) => w.id),
-  };
-  s.legacy.eras.push(era);
-  s.legacy.livingWorlds.push({ name: s.multi.worldName, year: s.calendarYear });
-  chronicle(s, `Age sealed — ${s.player.name} becomes ${fate}.`, 'legacy');
-  log(s, `Age sealed (${fate}). Continue from Legacy tab.`, 'legacy');
-  s.gameOver = null;
-  refreshAll(app);
-}
-
-function pickFate(s) {
-  if (s.rivals.some((r) => r.alliance && r.opinion > 40)) return 'a powerful ally in memory';
-  if (s.cities.length >= 3 && s.player.prestige > 40) return 'a legendary civilization';
-  if (s.player.unrest > 50 || s.cities.length === 0) return 'a fallen kingdom';
-  return 'ancient ruins';
-}
-
-function continueEra(era) {
-  era.allEras = [...(stateRef.current.legacy.eras || [])];
-  start({ seed: stateRef.current.seed + 17, legacy: era });
-}
-
-function updateAccountChip() {
+function updateChip() {
   const chip = document.getElementById('account-chip');
-  const session = getSession();
-  if (!chip || !session) return;
-  chip.textContent = `${session.username}${session.role === 'admin' ? ' · admin' : ''}`;
+  const s = getSession();
+  if (chip && s) chip.textContent = `${s.username}${s.role === 'admin' ? ' · admin' : ''}`;
 }
 
 function showGame() {
   document.getElementById('auth-gate').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
+  fitCanvas();
   if (!uiBound) {
     bindUI(app);
     uiBound = true;
+    window.addEventListener('resize', () => {
+      fitCanvas();
+      if (stateRef.current) refreshAll(app);
+    });
   }
-  if (!stateRef.current) start();
-  else refreshAll(app);
-  updateAccountChip();
+  if (!stateRef.current) {
+    const existing = localStorage.getItem('aetheria_save');
+    if (existing) {
+      try {
+        stateRef.current = revive(JSON.parse(existing));
+      } catch {
+        start();
+      }
+    } else start();
+  }
+  refreshAll(app);
+  updateChip();
 }
 
 function showAuth(hint = '') {
   document.getElementById('auth-gate').classList.remove('hidden');
   document.getElementById('app').classList.add('hidden');
-  const hintEl = document.getElementById('auth-hint');
-  if (hintEl) hintEl.textContent = hint;
+  document.getElementById('auth-hint').textContent = hint;
 }
 
 async function bootAuth() {
-  const bootstrap = await ensureAdminAccount();
+  let bootstrap;
+  try {
+    bootstrap = await ensureAdminAccount();
+  } catch (err) {
+    console.error(err);
+    showAuth('Account vault error — try Export/Import or clear site data for this origin only if needed.');
+    bootstrap = { created: false };
+  }
+
   const userInput = document.getElementById('auth-username');
   if (userInput && !userInput.value) userInput.value = DEFAULT_ADMIN.username;
 
+  // audio toggle on gate
+  const audioToggle = document.getElementById('auth-audio');
+  if (audioToggle) {
+    audioToggle.checked = isAudioEnabled();
+    audioToggle.onchange = () => setAudioEnabled(audioToggle.checked);
+  }
+
   if (bootstrap.created) {
-    showAuth(`First run: admin account created. Username "${DEFAULT_ADMIN.username}", password "${DEFAULT_ADMIN.password}". Change it after signing in.`);
+    showAuth(`First run: admin created → username "${DEFAULT_ADMIN.username}" / password "${DEFAULT_ADMIN.password}". Change it after login. This account is never wiped by New Campaign.`);
   } else {
-    showAuth('Admin account is remembered in this browser’s protected vault.');
+    showAuth('Admin account is stored in a protected browser vault.');
   }
 
-  const session = getSession();
-  if (session) {
+  if (getSession()) {
     showGame();
-    return;
   }
 
-  document.getElementById('auth-form').addEventListener('submit', async (e) => {
+  document.getElementById('auth-form').onsubmit = async (e) => {
     e.preventDefault();
-    const username = document.getElementById('auth-username').value;
-    const password = document.getElementById('auth-password').value;
-    const remember = document.getElementById('auth-remember').checked;
     const err = document.getElementById('auth-error');
-    const result = await signIn(username, password, { remember });
-    if (!result.ok) {
+    try {
+      const result = await signIn(
+        document.getElementById('auth-username').value,
+        document.getElementById('auth-password').value,
+        { remember: document.getElementById('auth-remember').checked },
+      );
+      if (!result.ok) {
+        err.hidden = false;
+        err.textContent = result.error;
+        beep('bad');
+        return;
+      }
+      err.hidden = true;
+      beep('good');
+      showGame();
+    } catch (ex) {
       err.hidden = false;
-      err.textContent = result.error;
-      return;
+      err.textContent = ex.message || 'Sign-in failed.';
     }
-    err.hidden = true;
-    showGame();
-  });
+  };
 
   document.getElementById('btn-export-vault').onclick = () => {
     const blob = new Blob([exportVault()], { type: 'application/json' });
@@ -214,65 +158,59 @@ async function bootAuth() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const text = await file.text();
-      await importVault(text);
+      await importVault(await file.text());
       showAuth('Vault imported. Sign in with your admin account.');
-      alert('Account vault imported. Admin account preserved.');
+      toast('Vault imported', 'good');
     } catch (err) {
-      alert(err.message || 'Import failed.');
+      toast(err.message || 'Import failed', 'bad');
     }
   };
+
+  document.getElementById('btn-guest')?.addEventListener('click', async () => {
+    // convenience: sign in as admin with default if still default, else prompt
+    const result = await signIn('admin', 'admin', { remember: true });
+    if (result.ok) showGame();
+    else {
+      document.getElementById('auth-error').hidden = false;
+      document.getElementById('auth-error').textContent = 'Guest quick-start only works with default admin password.';
+    }
+  });
 }
 
 const app = {
   stateRef,
   canvas,
-  redraw,
-  newGame: () => start({ massive: stateRef.current?.multi?.wantMassive }),
-  save,
-  load,
-  exportSave,
-  sealAge,
+  newGame: () => start(),
+  save: () => save('autosave'),
+  load: () => load('autosave'),
+  saveSlot: (n) => save(n),
+  loadSlot: (n) => load(n),
   signOut() {
     authSignOut({ forgetRemembered: true });
     document.getElementById('menu-modal')?.classList.add('hidden');
-    showAuth('Signed out. Your admin account is still saved.');
+    showAuth('Signed out. Admin account still saved in the vault.');
   },
   clearCampaign() {
-    if (!confirm('Clear campaign saves? Your admin account will NOT be deleted.')) return;
-    const removed = clearCampaignData();
+    if (!confirm('Clear all campaign saves? Admin account will NOT be deleted.')) return;
+    clearCampaignData();
     start();
-    alert(`Cleared: ${removed.join(', ') || 'nothing'}. Admin vault kept.`);
     document.getElementById('menu-modal')?.classList.add('hidden');
+    toast('Campaign data cleared. Admin kept.', 'good');
   },
-  async changePassword(currentPassword, newPassword) {
-    const session = getSession();
-    if (!session) return { ok: false, error: 'Not signed in.' };
-    return changePassword(session.username, currentPassword, newPassword);
-  },
+  changePassword,
   getSession,
-  moveSelected(x, y) {
-    const u = stateRef.current.units.find((unit) => unit.id === stateRef.current.selectedUnitId);
-    if (u) moveUnit(stateRef.current, u, x, y);
-  },
 };
-
-window.addEventListener('aetheria-refresh', () => {
-  if (stateRef.current) refreshAll(app);
-});
-window.addEventListener('aetheria-seal', () => sealAge());
-window.addEventListener('aetheria-continue', (e) => continueEra(e.detail));
 
 bootAuth();
 
 window.__AETHERIA__ = {
   getState: () => stateRef.current,
   getSession,
+  newGame: start,
   endTurn: () => {
     endTurn(stateRef.current);
     refreshAll(app);
   },
-  newGame: start,
   foundFirstCity: () => {
     const settler = stateRef.current.units.find((u) => u.type === 'settler');
     if (settler) {
@@ -281,7 +219,6 @@ window.__AETHERIA__ = {
     }
   },
   moveUnit,
-  refresh: () => refreshAll(app),
   ensureAdminAccount,
   signIn,
   clearCampaignData,

@@ -1,233 +1,95 @@
 export const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter'];
 
 export const TERRAIN = {
-  water: { color: '#2a5f7a', move: 99, name: 'Ocean' },
-  coast: { color: '#3d7a8c', move: 1, name: 'Coast' },
-  grass: { color: '#4a8f4e', move: 1, name: 'Grassland' },
-  forest: { color: '#2f6b3a', move: 2, name: 'Forest' },
-  hill: { color: '#7a8f4a', move: 2, name: 'Highlands' },
-  mountain: { color: '#8a8a8a', move: 3, name: 'Mountain' },
-  desert: { color: '#c9a86c', move: 2, name: 'Desert' },
-  snow: { color: '#dfe8ef', move: 2, name: 'Snow' },
-  swamp: { color: '#4a6b4f', move: 2, name: 'Swamp' },
-  volcano: { color: '#8b3a2a', move: 3, name: 'Volcano' },
-  jungle: { color: '#1f5c34', move: 2, name: 'Jungle' },
-  ruins: { color: '#6b5a4a', move: 1, name: 'Ancient Ruins' },
+  water: { color: '#1f4f6a', move: 99, name: 'Ocean' },
+  coast: { color: '#3a7a8e', move: 1, name: 'Coast' },
+  grass: { color: '#4c9450', move: 1, name: 'Grassland' },
+  forest: { color: '#2d6a38', move: 2, name: 'Forest' },
+  hill: { color: '#7d9148', move: 2, name: 'Highlands' },
+  mountain: { color: '#8e8e8e', move: 3, name: 'Mountain' },
+  desert: { color: '#d0ad6e', move: 2, name: 'Desert' },
+  snow: { color: '#e4eef5', move: 2, name: 'Snow' },
+  swamp: { color: '#4a6d52', move: 2, name: 'Swamp' },
+  volcano: { color: '#8f3d2c', move: 3, name: 'Volcano' },
+  jungle: { color: '#1c5a32', move: 2, name: 'Jungle' },
+  ruins: { color: '#6e5b4a', move: 1, name: 'Ancient Ruins' },
 };
 
-export const RESOURCES = ['food', 'wood', 'stone', 'gold', 'iron', 'coal', 'wheat', 'flour', 'bread', 'weapons', 'mana', 'lore'];
-
 export const BUILDINGS = {
-  town_hall: { name: 'Town Hall', cost: { wood: 20, stone: 10 }, turns: 1, once: true },
-  house: { name: 'House', cost: { wood: 10 }, turns: 1, housing: 8 },
-  tenement: { name: 'Tenement', cost: { wood: 20, stone: 10 }, turns: 2, housing: 40 },
-  farm: { name: 'Farm', cost: { wood: 8 }, turns: 1, food: 4, wheat: 2 },
-  lumber_mill: { name: 'Lumber Mill', cost: { wood: 12, stone: 4 }, turns: 1, wood: 3 },
-  quarry: { name: 'Quarry', cost: { wood: 10 }, turns: 1, stone: 3 },
-  mine: { name: 'Mine', cost: { wood: 12, stone: 8 }, turns: 2, iron: 2 },
-  coal_pit: { name: 'Coal Pit', cost: { wood: 10, stone: 6 }, turns: 2, coal: 2 },
-  mill: { name: 'Mill', cost: { wood: 14, stone: 6 }, turns: 2, converts: { wheat: 2, flour: 2 } },
-  bakery: { name: 'Bakery', cost: { wood: 12, stone: 8 }, turns: 2, converts: { flour: 2, bread: 2, food: 3 } },
-  blacksmith: { name: 'Blacksmith', cost: { wood: 10, stone: 14, iron: 2 }, turns: 2, converts: { iron: 1, coal: 1, weapons: 1 } },
-  barracks: { name: 'Barracks', cost: { wood: 15, stone: 15 }, turns: 2 },
-  marketplace: { name: 'Marketplace', cost: { wood: 12, gold: 10 }, turns: 2, gold: 3 },
-  school: { name: 'School', cost: { wood: 14, stone: 10 }, turns: 2, education: 8, science: 2 },
-  academy: { name: 'Academy', cost: { wood: 20, stone: 20, gold: 20 }, turns: 3, education: 15, science: 6 },
-  clinic: { name: 'Clinic', cost: { wood: 12, stone: 10 }, turns: 2, healthcare: 10 },
-  temple: { name: 'Temple', cost: { wood: 14, stone: 16 }, turns: 2, faith: 10 },
-  watch_post: { name: 'Watch Post', cost: { wood: 10, stone: 8 }, turns: 1, crimeDown: 8 },
-  granary: { name: 'Granary', cost: { wood: 16, stone: 8 }, turns: 2, foodStore: 20 },
-  walls: { name: 'City Walls', cost: { stone: 30, wood: 10 }, turns: 3, fort: 10 },
-  fort: { name: 'Fort', cost: { stone: 40, wood: 15, iron: 5 }, turns: 4, fort: 20, supply: true },
-  dockyard: { name: 'Dockyard', cost: { wood: 25, stone: 10 }, turns: 3, coast: true },
-  balloon_works: { name: 'Balloon Works', cost: { wood: 20, iron: 8, gold: 25 }, turns: 4 },
-  mercenary_camp: { name: 'Mercenary Camp', cost: { gold: 30, wood: 10 }, turns: 2 },
-  bank: { name: 'Bank', cost: { stone: 25, gold: 40 }, turns: 3 },
-  guild_hall: { name: 'Guild Hall', cost: { wood: 20, stone: 20, gold: 25 }, turns: 3 },
-  warehouse: { name: 'Warehouse', cost: { wood: 18, stone: 12 }, turns: 2 },
-  cartographer: { name: 'Cartographer\'s Hall', cost: { wood: 16, gold: 20 }, turns: 2 },
-  spaceport: { name: 'Spaceport', cost: { iron: 40, stone: 40, gold: 80 }, turns: 6, age: 'Space' },
-  magic_school: { name: 'Magic School', cost: { stone: 20, gold: 30 }, turns: 3, fantasy: true, mana: 4 },
+  town_hall: { name: 'Town Hall', cost: { wood: 0 }, turns: 0, once: true, desc: 'Seat of rule' },
+  house: { name: 'House', cost: { wood: 12 }, turns: 1, housing: 10, desc: '+10 housing' },
+  tenement: { name: 'Tenement', cost: { wood: 24, stone: 12 }, turns: 2, housing: 35, desc: '+35 housing' },
+  farm: { name: 'Farm', cost: { wood: 10 }, turns: 1, food: 5, desc: '+5 food / turn' },
+  lumber_mill: { name: 'Lumber Mill', cost: { wood: 14, stone: 6 }, turns: 1, wood: 4, desc: '+4 wood / turn' },
+  quarry: { name: 'Quarry', cost: { wood: 12 }, turns: 1, stone: 3, desc: '+3 stone / turn' },
+  mine: { name: 'Mine', cost: { wood: 14, stone: 10 }, turns: 2, iron: 2, gold: 1, desc: '+2 iron, +1 gold' },
+  barracks: { name: 'Barracks', cost: { wood: 18, stone: 18 }, turns: 2, desc: 'Train warriors' },
+  marketplace: { name: 'Marketplace', cost: { wood: 16, gold: 12 }, turns: 2, gold: 4, desc: '+4 gold / turn' },
+  school: { name: 'School', cost: { wood: 16, stone: 12 }, turns: 2, science: 3, desc: '+3 science' },
+  walls: { name: 'City Walls', cost: { stone: 35, wood: 12 }, turns: 3, defense: 8, desc: 'Fortify city' },
+  temple: { name: 'Temple', cost: { wood: 14, stone: 18 }, turns: 2, happiness: 6, desc: '+happiness' },
+  dockyard: { name: 'Dockyard', cost: { wood: 28, stone: 12 }, turns: 3, coast: true, desc: 'Build ships' },
+  wonder_yard: { name: 'Wonder Yard', cost: { stone: 40, gold: 40 }, turns: 3, desc: 'Begin wonders' },
 };
 
 export const UNITS = {
-  scout: { name: 'Scout', cost: { food: 5, gold: 5 }, moves: 3, vision: 3, atk: 1, hp: 8, class: 'explore' },
-  worker: { name: 'Worker', cost: { food: 8 }, moves: 2, vision: 2, atk: 0, hp: 6, class: 'work' },
-  settler: { name: 'Settler', cost: { food: 20, wood: 10, gold: 10 }, moves: 2, vision: 2, atk: 0, hp: 10, class: 'settle' },
-  warrior: { name: 'Warrior', cost: { food: 10, weapons: 1 }, moves: 2, vision: 2, atk: 4, hp: 16, class: 'war' },
-  explorer: { name: 'Explorer', cost: { food: 10, gold: 15 }, moves: 3, vision: 4, atk: 2, hp: 12, class: 'explore' },
-  galley: { name: 'Galley', cost: { wood: 25, weapons: 1 }, moves: 3, vision: 3, atk: 5, hp: 20, naval: true, class: 'war' },
-  balloon: { name: 'War Balloon', cost: { wood: 20, iron: 5, gold: 30 }, moves: 4, vision: 4, atk: 3, hp: 14, air: true, class: 'war' },
-  mercenary: { name: 'Mercenary', cost: { gold: 40 }, moves: 2, vision: 2, atk: 5, hp: 18, class: 'war' },
+  scout: { name: 'Scout', cost: { food: 6, gold: 4 }, moves: 4, vision: 4, atk: 1, hp: 10, role: 'explore', glyph: 'S' },
+  worker: { name: 'Worker', cost: { food: 10 }, moves: 2, vision: 2, atk: 0, hp: 8, role: 'work', glyph: 'W' },
+  settler: { name: 'Settler', cost: { food: 28, wood: 12, gold: 12 }, moves: 2, vision: 2, atk: 0, hp: 12, role: 'settle', glyph: 'Z' },
+  warrior: { name: 'Warrior', cost: { food: 12, iron: 2, gold: 6 }, moves: 2, vision: 2, atk: 5, hp: 20, role: 'war', glyph: 'A' },
+  archer: { name: 'Archer', cost: { food: 10, wood: 8, gold: 6 }, moves: 2, vision: 3, atk: 4, hp: 14, role: 'war', glyph: 'R' },
+  galley: { name: 'Galley', cost: { wood: 30, gold: 10 }, moves: 3, vision: 3, atk: 4, hp: 22, role: 'naval', glyph: 'G', naval: true },
 };
 
-export const CITY_ARCHETYPES = [
-  'Agrarian', 'Mercantile', 'Devout', 'Fortified', 'Learned', 'Frontier',
+export const TECHS = [
+  { id: 'agriculture', name: 'Agriculture', cost: 20, unlocks: ['farm'], desc: 'Better farms' },
+  { id: 'forestry', name: 'Forestry', cost: 25, unlocks: ['lumber_mill'], desc: 'Lumber mills' },
+  { id: 'masonry', name: 'Masonry', cost: 30, unlocks: ['quarry', 'walls'], desc: 'Stone works & walls' },
+  { id: 'mining', name: 'Mining', cost: 35, requires: ['masonry'], unlocks: ['mine'], desc: 'Extract iron & gold' },
+  { id: 'writing', name: 'Writing', cost: 40, unlocks: ['school'], desc: 'Schools & records' },
+  { id: 'bronze_working', name: 'Bronze Working', cost: 45, requires: ['mining'], unlocks: ['warrior'], desc: 'Stronger infantry' },
+  { id: 'archery', name: 'Archery', cost: 40, requires: ['forestry'], unlocks: ['archer'], desc: 'Ranged troops' },
+  { id: 'sailing', name: 'Sailing', cost: 50, requires: ['forestry'], unlocks: ['dockyard', 'galley'], desc: 'Ships & docks' },
+  { id: 'currency', name: 'Currency', cost: 55, requires: ['writing'], unlocks: ['marketplace'], desc: 'Markets thrive' },
+  { id: 'theology', name: 'Theology', cost: 50, requires: ['writing'], unlocks: ['temple'], desc: 'Temples' },
+  { id: 'engineering', name: 'Engineering', cost: 70, requires: ['masonry', 'writing'], unlocks: ['wonder_yard'], desc: 'Great projects' },
+  { id: 'iron_working', name: 'Iron Working', cost: 80, requires: ['bronze_working'], desc: '+1 warrior attack' },
+  { id: 'cartography', name: 'Cartography', cost: 60, requires: ['writing'], desc: 'Scouts +1 vision' },
+  { id: 'guilds', name: 'Guilds', cost: 90, requires: ['currency'], desc: '+2 gold from markets' },
+  { id: 'philosophy', name: 'Philosophy', cost: 100, requires: ['writing', 'theology'], desc: '+happiness nationwide' },
 ];
-
-export const GOVERNORS = [
-  { id: 'mira', name: 'Mira the Fair', bonus: { happiness: 8 } },
-  { id: 'bram', name: 'Bram Ironhand', bonus: { production: 1.1 } },
-  { id: 'lyra', name: 'Lyra Quill', bonus: { education: 10 } },
-  { id: 'kael', name: 'Kael Watch', bonus: { crimeDown: 10 } },
-  { id: 'oren', name: 'Oren Ledger', bonus: { gold: 2 } },
-  { id: 'vessa', name: 'Vessa Flame', bonus: { faith: 10 } },
-];
-
-export const LAWS = [
-  { id: 'levy', name: 'War Levy', effect: { military: 1, happiness: -4 } },
-  { id: 'charter', name: 'Merchant Charter', effect: { gold: 2, crime: 2 } },
-  { id: 'tithe', name: 'Sacred Tithe', effect: { faith: 8, gold: -1 } },
-  { id: 'schools', name: 'Compulsory Schools', effect: { education: 8, gold: -2 } },
-  { id: 'amnesty', name: 'Royal Amnesty', effect: { crime: -6, unrest: -4 } },
-  { id: 'curfew', name: 'Night Curfew', effect: { crime: -8, happiness: -3 } },
-];
-
-export const RELIGIONS = [
-  { id: 'verdant', name: 'Verdant Circle', mood: 'nature' },
-  { id: 'solar', name: 'Solar Covenant', mood: 'order' },
-  { id: 'tide', name: 'Tideborn Faith', mood: 'trade' },
-  { id: 'ash', name: 'Ashflame Creed', mood: 'war' },
-  { id: 'star', name: 'Starlit Path', mood: 'lore' },
-];
-
-export const GOVERNMENTS = [
-  { id: 'absolute', name: 'Absolute Monarchy', elections: false },
-  { id: 'constitutional', name: 'Constitutional Monarchy', elections: true },
-  { id: 'republic', name: 'Republic', elections: true },
-  { id: 'oligarchy', name: 'Oligarchy', elections: false },
-];
-
-export const FORMATIONS = ['line', 'column', 'wedge', 'square', 'skirmish'];
 
 export const WONDERS = [
-  { id: 'pyramid', name: 'Great Pyramid', cost: { stone: 80, gold: 40 }, turns: 8, age: 'Stone', bonus: { prestige: 20 } },
-  { id: 'gardens', name: 'Hanging Gardens', cost: { wood: 40, food: 40, gold: 30 }, turns: 7, age: 'Bronze', bonus: { happiness: 15 } },
-  { id: 'world_tree', name: 'World Tree', cost: { wood: 100, lore: 20 }, turns: 10, age: 'Iron', bonus: { nature: 20 } },
-  { id: 'library', name: 'Infinite Library', cost: { stone: 60, gold: 50 }, turns: 9, age: 'Middle Ages', bonus: { science: 10 } },
-  { id: 'sky_fortress', name: 'Sky Fortress', cost: { iron: 50, stone: 60, gold: 60 }, turns: 10, age: 'Renaissance', bonus: { military: 15 } },
-  { id: 'moon_elevator', name: 'Moon Elevator', cost: { iron: 80, gold: 100 }, turns: 12, age: 'Space', bonus: { space: 25 } },
-  { id: 'planetary_shield', name: 'Planetary Shield', cost: { iron: 100, gold: 120 }, turns: 14, age: 'Interstellar', bonus: { defense: 30 } },
-  { id: 'colossus', name: 'Colossus', cost: { stone: 50, iron: 20, gold: 40 }, turns: 8, age: 'Iron', bonus: { trade: 10 } },
-  { id: 'oracle', name: 'Oracle Spire', cost: { stone: 40, gold: 40 }, turns: 7, age: 'Bronze', bonus: { lore: 15 } },
-  { id: 'clockwork', name: 'Clockwork Heart', cost: { iron: 40, gold: 50 }, turns: 9, age: 'Industrial', bonus: { production: 15 } },
-  { id: 'celestial', name: 'Celestial Archive', cost: { stone: 70, gold: 70 }, turns: 10, age: 'Near Future', bonus: { science: 15 } },
-  { id: 'beacon', name: 'Eternal Beacon', cost: { gold: 90, lore: 30 }, turns: 11, age: 'Modern', bonus: { culture: 20 } },
+  { id: 'pyramid', name: 'Great Pyramid', cost: { stone: 60, gold: 30 }, turns: 8, bonus: 'prestige' },
+  { id: 'gardens', name: 'Hanging Gardens', cost: { wood: 40, food: 40, gold: 25 }, turns: 7, bonus: 'food' },
+  { id: 'library', name: 'Infinite Library', cost: { stone: 45, gold: 40 }, turns: 8, bonus: 'science' },
+  { id: 'colossus', name: 'Colossus', cost: { stone: 40, iron: 20, gold: 35 }, turns: 7, bonus: 'gold' },
 ];
 
-export const WONDER_SITES = [
-  'lost_city', 'ancient_temple', 'giant_cave', 'underground_kingdom',
-  'floating_island', 'pirate_cove', 'hidden_continent', 'secret_civilization',
-  'ancient_library', 'underwater_ruins', 'secret_valley',
+export const EVENTS = [
+  { id: 'bountiful', name: 'Bountiful Harvest', good: true, text: 'The fields overflow.', effect: { food: 25 } },
+  { id: 'caravan', name: 'Merchant Caravan', good: true, text: 'Traders bring coin.', effect: { gold: 20 } },
+  { id: 'ruins_map', name: 'Ruins Map', good: true, text: 'An old map reveals a site.', effect: { lore: 10, revealSite: true } },
+  { id: 'raiders', name: 'Raider Sighting', good: false, text: 'Hostile bands grow bold.', effect: { spawnRaiders: 2 } },
+  { id: 'storm', name: 'Great Storm', good: false, text: 'Storms batter the land.', effect: { wood: -10, food: -8 } },
+  { id: 'plague', name: 'Creeping Plague', good: false, text: 'Illness spreads in towns.', effect: { happiness: -12, pop: -2 } },
+  { id: 'festival', name: 'Royal Festival', good: true, text: 'The people cheer.', effect: { happiness: 15, gold: -10 } },
+  { id: 'meteor', name: 'Sky Stone', good: true, text: 'A glowing stone falls.', effect: { iron: 8, lore: 8 } },
 ];
 
-export const AGES = [
-  'Stone', 'Bronze', 'Iron', 'Middle Ages', 'Renaissance',
-  'Industrial', 'Modern', 'Near Future', 'Space', 'Interstellar',
+export const CONTINENTS = [
+  { id: 'verdoria', name: 'Verdoria', color: '#3f8f4a', blurb: 'Rich farmland and forests — ideal for beginners.', resources: ['Wheat', 'Wood', 'Horses', 'Clay'] },
+  { id: 'ashkar', name: 'Ashkar', color: '#c45a3a', blurb: 'Volcanic and dangerous, but rich in metals and gems.', resources: ['Iron', 'Coal', 'Gold', 'Gems'] },
+  { id: 'frostheim', name: 'Frostheim', color: '#5b8fb8', blurb: 'Frozen frontiers. Harsh winters, rare crystals.', resources: ['Fur', 'Ice Crystal', 'Silver', 'Fish'] },
+  { id: 'sunreach', name: 'Sunreach', color: '#d4a24c', blurb: 'Desert empires, pyramids, and buried relics.', resources: ['Salt', 'Incense', 'Oil', 'Relics'] },
+  { id: 'emerald', name: 'Emerald Isles', color: '#2f9e8f', blurb: 'Island chains built for naval power.', resources: ['Pearls', 'Fish', 'Coral', 'Fruit'] },
+  { id: 'shadow', name: 'Shadow Wilds', color: '#4a4658', blurb: 'Corrupted wilds. Late-game exploration.', resources: ['Moonstone', 'Mythril', 'Relics'] },
 ];
 
-export const TECH_PILLARS = ['Craft', 'War', 'Civic', 'Trade', 'Lore', 'Explore', 'Nature', 'Arcana'];
-
-export const KEYSTONES = {
-  Writing: { age: 'Bronze', pillar: 'Lore' },
-  Steam: { age: 'Industrial', pillar: 'Craft' },
-  Starflight: { age: 'Space', pillar: 'Explore' },
-  'Interstellar Ascension': { age: 'Interstellar', pillar: 'Lore' },
-};
-
-export const SPACE_BODIES = [
-  { id: 'moon', name: 'Moon', cost: 40 },
-  { id: 'mars', name: 'Mars', cost: 60 },
-  { id: 'asteroids', name: 'Asteroid Belt', cost: 50 },
-  { id: 'venus', name: 'Venus', cost: 70 },
-  { id: 'europa', name: 'Europa', cost: 75 },
-  { id: 'titan', name: 'Titan', cost: 80 },
-  { id: 'proxima', name: 'Proxima b', cost: 100 },
+export const TUTORIAL = [
+  { id: 'move', title: 'Explore', body: 'Select your Scout (S). Click a nearby tile or use arrow keys / WASD to move and clear fog.' },
+  { id: 'settle', title: 'Found a City', body: 'Select the Settler (Z) on open land and press F — or use Found City in the actions bar.' },
+  { id: 'build', title: 'Build & Train', body: 'Open the City panel. Queue Farms, Mills, and Barracks. Train Workers and Warriors.' },
+  { id: 'gather', title: 'Gather', body: 'Move a Worker onto a colored deposit and press G to gather resources.' },
+  { id: 'turn', title: 'End Turn', body: 'When your moves are spent, hit End Turn. Seasons change, cities produce, rivals act.' },
 ];
-
-export const WORLD_EVENTS = [
-  { id: 'famine', name: 'Great Famine', pressure: { food: -20, happiness: -10 } },
-  { id: 'civil_war', name: 'Civil War Sparks', pressure: { unrest: 20, gold: -15 } },
-  { id: 'meteor', name: 'Meteor Impact', pressure: { mapScar: true } },
-  { id: 'earthquake', name: 'Earthquake', pressure: { stone: -10, unrest: 8 } },
-  { id: 'religion', name: 'Religious Movement', pressure: { faith: 15, unrest: 5 } },
-  { id: 'gold_rush', name: 'Gold Rush', pressure: { gold: 40, crime: 10 } },
-  { id: 'pirates', name: 'Pirate Age', pressure: { tradeRisk: 0.3 } },
-  { id: 'migration', name: 'Massive Migration', pressure: { population: 20 } },
-  { id: 'disease', name: 'New Disease', pressure: { health: -15, population: -10 } },
-  { id: 'continent', name: 'Discovery of a New Continent', pressure: { lore: 25, explore: true } },
-];
-
-export const MISSION_TYPES = [
-  'noble_land', 'flood_relief', 'trade_venture', 'dragon_pass', 'military_aid',
-  'raider_clear', 'disease_relief', 'gold_claim',
-];
-
-export const CRIME_NETWORKS = ['bandits', 'smugglers', 'pirates', 'corrupt_officials', 'assassins'];
-
-export const WILDLIFE = [
-  { id: 'wolves', name: 'Wolves', color: '#8a8a8a', behavior: 'hunt' },
-  { id: 'deer', name: 'Deer', color: '#a67c52', behavior: 'migrate' },
-  { id: 'bears', name: 'Bears', color: '#6b4a2a', behavior: 'defend' },
-  { id: 'birds', name: 'Birds', color: '#7eb0c9', behavior: 'signal' },
-  { id: 'fish', name: 'Fish', color: '#3d7a8c', behavior: 'stocks' },
-];
-
-export const GREAT_KINDS = [
-  { id: 'inventor', name: 'Inventor', buff: 'science' },
-  { id: 'artist', name: 'Artist', buff: 'happiness' },
-  { id: 'scientist', name: 'Scientist', buff: 'education' },
-  { id: 'merchant', name: 'Merchant', buff: 'gold' },
-  { id: 'general', name: 'General', buff: 'morale' },
-  { id: 'explorer', name: 'Explorer', buff: 'lore' },
-];
-
-export const CULTURE_TRAITS = [
-  'architecture', 'clothing', 'music', 'festivals', 'cuisine',
-  'military', 'art', 'language',
-];
-
-export const ROADMAP = `Stages 1–34 Roadmap
-1 Foundations · 2 Kingdom Management · 3 Living Citizens
-4 Politics · 5 Diplomacy · 6 Warfare · 7 Economy
-8 Exploration · 9 Technology · 10 Wonders · 11 Dynamic History
-12 Living AI · 13 World Evolves · 14 Magic & Myth · 15 Space
-16 Multiplayer · 17 Mod Support · 18 Legacy System
-19 Legacy Lords · 20 Visual Style · 21 World Events
-22 Dynamic Missions · 23 Culture · 24 Seasons
-25 Character Bonds · 26 Crime · 27 Religion · 28 Wildlife
-29 Exploration Depth · 30 Great People · 31 Natural Economy
-32 World Chronicle · 33 Victory Paths · 34 Living World Score`;
-
-/** Generate a large tech tree (~2020 entries condensed into representative nodes). */
-export function buildTechTree() {
-  const techs = [];
-  let n = 0;
-  for (const age of AGES) {
-    for (const pillar of TECH_PILLARS) {
-      for (let i = 1; i <= 25; i++) {
-        n += 1;
-        techs.push({
-          id: `${age}_${pillar}_${i}`.replace(/\s+/g, '_'),
-          name: `${age} ${pillar} ${i}`,
-          age,
-          pillar,
-          cost: 10 + AGES.indexOf(age) * 12 + i * 2,
-          requires: i > 1 ? [`${age}_${pillar}_${i - 1}`.replace(/\s+/g, '_')] : [],
-        });
-      }
-    }
-  }
-  for (const [name, meta] of Object.entries(KEYSTONES)) {
-    techs.push({
-      id: name.replace(/\s+/g, '_'),
-      name,
-      age: meta.age,
-      pillar: meta.pillar,
-      cost: 80 + AGES.indexOf(meta.age) * 20,
-      keystone: true,
-      requires: [],
-    });
-  }
-  return techs;
-}
