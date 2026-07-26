@@ -54,32 +54,7 @@ export function bindUI(app) {
   document.getElementById('btn-close-help').onclick = () => {
     document.getElementById('help-modal').classList.add('hidden');
   };
-  document.getElementById('btn-sign-out').onclick = () => app.signOut();
-  document.getElementById('btn-account').onclick = () => {
-    document.getElementById('menu-modal').classList.add('hidden');
-    document.getElementById('account-modal').classList.remove('hidden');
-    const s = app.getSession();
-    document.getElementById('account-summary').textContent =
-      `Signed in as ${s.username} (${s.role}). Vault is separate from campaign saves.`;
-  };
-  document.getElementById('btn-close-account').onclick = () => {
-    document.getElementById('account-modal').classList.add('hidden');
-  };
-  document.getElementById('btn-change-pw').onclick = async () => {
-    const result = await app.changePassword(
-      document.getElementById('pw-current').value,
-      document.getElementById('pw-new').value,
-    );
-    const err = document.getElementById('pw-error');
-    if (!result.ok) {
-      err.hidden = false;
-      err.textContent = result.error;
-      return;
-    }
-    err.hidden = true;
-    toast('Password updated — admin kept', 'good');
-  };
-  document.getElementById('btn-clear-campaign').onclick = () => app.clearCampaign();
+  document.getElementById('btn-clear-saves')?.addEventListener('click', () => app.clearSaves());
 
   // actions
   document.getElementById('btn-found').onclick = () => {

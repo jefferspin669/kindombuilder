@@ -13,36 +13,9 @@
     <link rel="stylesheet" href="css/game.css" />
   </head>
   <body>
-    <div id="auth-gate" class="auth-gate">
-      <div class="auth-card">
-        <p class="auth-brand">Aetheria</p>
-        <h1>Sign in to reign</h1>
-        <p class="auth-note">
-          Your <strong>admin</strong> account is saved in a protected browser vault.
-          New campaigns never delete it.
-        </p>
-        <form id="auth-form">
-          <label>Username <input id="auth-username" autocomplete="username" required /></label>
-          <label>Password <input id="auth-password" type="password" autocomplete="current-password" required /></label>
-          <label class="auth-check"><input id="auth-remember" type="checkbox" checked /> Remember me</label>
-          <label class="auth-check"><input id="auth-audio" type="checkbox" checked /> UI sounds</label>
-          <p id="auth-error" class="auth-error" hidden></p>
-          <p id="auth-hint" class="auth-hint"></p>
-          <button type="submit" class="btn">Sign in</button>
-          <button type="button" id="btn-guest" class="btn ghost">Quick start (admin/admin)</button>
-        </form>
-        <details class="auth-advanced">
-          <summary>Backup admin vault</summary>
-          <button type="button" id="btn-export-vault" class="btn ghost">Export vault JSON</button>
-          <label class="file-btn">Import vault JSON<input id="import-vault" type="file" accept="application/json,.json" hidden /></label>
-        </details>
-      </div>
-    </div>
-
-    <div id="app" class="hidden">
+    <div id="app">
       <header class="bar">
         <a class="logo" href="index.html">Aetheria</a>
-        <span id="account-chip" class="account-chip"></span>
         <div id="resources" class="resources"></div>
         <div class="meta">
           <span id="happy-label">☺ 65</span>
@@ -100,24 +73,10 @@
         <button id="btn-new" class="btn">New Campaign</button>
         <button id="btn-save" class="btn">Quick Save</button>
         <button id="btn-load" class="btn">Quick Load</button>
-        <button id="btn-clear-campaign" class="btn ghost">Clear campaign data</button>
-        <button id="btn-account" class="btn ghost">Account</button>
+        <button id="btn-clear-saves" class="btn ghost">Clear saves</button>
+        <label class="check-row"><input id="menu-audio" type="checkbox" checked /> UI sounds</label>
         <button id="btn-help" class="btn ghost">Help / Controls</button>
-        <button id="btn-sign-out" class="btn ghost">Sign out</button>
         <button id="btn-close-menu" class="btn">Close</button>
-      </div>
-    </div>
-
-    <div class="modal hidden" id="account-modal">
-      <div class="modal-card">
-        <h2>Account</h2>
-        <p id="account-summary" class="muted"></p>
-        <p class="muted">Protected key: <code>aetheria_vault</code></p>
-        <label>Current password <input id="pw-current" type="password" /></label>
-        <label>New password <input id="pw-new" type="password" /></label>
-        <p id="pw-error" class="auth-error" hidden></p>
-        <button id="btn-change-pw" class="btn">Update password</button>
-        <button id="btn-close-account" class="btn ghost">Close</button>
       </div>
     </div>
 
@@ -130,7 +89,7 @@
           <li><b>F</b> found city (Settler) · <b>G</b> gather (Worker)</li>
           <li>Build farms & mills, train troops, research tech, deal with rivals</li>
           <li>Delve ruins for lore · complete missions · chase a victory path</li>
-          <li>Admin account survives New Campaign and clear-save</li>
+          <li>Plain HTML/CSS/JS testing build — no login required</li>
         </ul>
         <button id="btn-close-help" class="btn">Close</button>
       </div>
