@@ -7,6 +7,3 @@ cd aetheria
 python3 -m http.server 8080
 ```
 
-Open http://localhost:8080/game.html and click **Begin Reign**.
-
-Or open http://localhost:8080/ and click **Begin Reign** / **Play**.
