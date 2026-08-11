@@ -1,16 +1,23 @@
 # Kingdom Builder — The World of Aetheria
 
+Plain **HTML / CSS / JavaScript** testing build.
 
+## Live
 
-## Run
+https://jefferspin669.github.io/kindombuilder/aetheria/game.html
+
+Click **Begin Reign**.
+
+## Local
 
 ```bash
 cd aetheria
 python3 -m http.server 8080
 ```
 
-Then open:
+Open http://localhost:8080/game.html → **Begin Reign**.
 
+## Controls
 
 | Control | Action |
 |---|---|
