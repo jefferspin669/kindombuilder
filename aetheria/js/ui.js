@@ -9,100 +9,117 @@ import { toast, clamp } from './utils.js';
 
 const PANELS = ['city', 'tech', 'diplo', 'explore', 'wonders', 'chronicle', 'missions', 'realm'];
 
+function on(id, event, handler) {
+  const el = document.getElementById(id);
+  if (!el) {
+    console.warn('Missing element #' + id);
+    return;
+  }
+  el.addEventListener(event, handler);
+}
+
 export function bindUI(app) {
   const { stateRef, canvas } = app;
+  if (!canvas) throw new Error('Map canvas missing');
 
   // panel tabs
   const tabs = document.getElementById('panel-tabs');
-  tabs.innerHTML = '';
-  PANELS.forEach((id) => {
-    const b = document.createElement('button');
-    b.textContent = label(id);
-    b.dataset.panel = id;
-    b.onclick = () => {
-      stateRef.current.uiPanel = id;
-      beep('ui');
-      refreshAll(app);
-    };
-    tabs.appendChild(b);
-  });
+  if (tabs) {
+    tabs.innerHTML = '';
+    PANELS.forEach((id) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label(id);
+      b.dataset.panel = id;
+      b.onclick = () => {
+        if (!stateRef.current) return;
+        stateRef.current.uiPanel = id;
+        beep('ui');
+        refreshAll(app);
+      };
+      tabs.appendChild(b);
+    });
+  }
 
-  document.getElementById('btn-end-turn').onclick = () => {
+  on('btn-end-turn', 'click', () => {
+    if (!stateRef.current) return;
     endTurn(stateRef.current);
     beep('turn');
     refreshAll(app);
     maybeVictory(app);
-  };
+  });
 
-  document.getElementById('btn-menu').onclick = () => {
-    document.getElementById('menu-modal').classList.remove('hidden');
-  };
-  document.getElementById('btn-close-menu').onclick = () => {
-    document.getElementById('menu-modal').classList.add('hidden');
-  };
-  document.getElementById('btn-new').onclick = () => {
+  on('btn-menu', 'click', () => document.getElementById('menu-modal')?.classList.remove('hidden'));
+  on('btn-close-menu', 'click', () => document.getElementById('menu-modal')?.classList.add('hidden'));
+  on('btn-new', 'click', () => {
     app.newGame();
-    document.getElementById('menu-modal').classList.add('hidden');
+    document.getElementById('menu-modal')?.classList.add('hidden');
     toast('New campaign started', 'info');
-  };
-  document.getElementById('btn-save').onclick = () => app.save();
-  document.getElementById('btn-load').onclick = () => app.load();
-  document.getElementById('btn-help').onclick = () => {
-    document.getElementById('menu-modal').classList.add('hidden');
-    document.getElementById('help-modal').classList.remove('hidden');
-  };
-  document.getElementById('btn-close-help').onclick = () => {
-    document.getElementById('help-modal').classList.add('hidden');
-  };
-  document.getElementById('btn-clear-saves')?.addEventListener('click', () => app.clearSaves());
+  });
+  on('btn-save', 'click', () => app.save());
+  on('btn-load', 'click', () => app.load());
+  on('btn-help', 'click', () => {
+    document.getElementById('menu-modal')?.classList.add('hidden');
+    document.getElementById('help-modal')?.classList.remove('hidden');
+  });
+  on('btn-close-help', 'click', () => document.getElementById('help-modal')?.classList.add('hidden'));
+  on('btn-clear-saves', 'click', () => app.clearSaves());
 
-  // actions
-  document.getElementById('btn-found').onclick = () => {
+  on('btn-found', 'click', () => {
     const u = selectedUnit(stateRef.current);
     if (foundCity(stateRef.current, u)) beep('build');
     refreshAll(app);
-  };
-  document.getElementById('btn-gather').onclick = () => {
+  });
+  on('btn-gather', 'click', () => {
     gather(stateRef.current, selectedUnit(stateRef.current));
     refreshAll(app);
-  };
-  document.getElementById('btn-delve').onclick = () => {
+  });
+  on('btn-delve', 'click', () => {
     const state = stateRef.current;
     const u = selectedUnit(state);
+    if (!u) {
+      toast('Select a unit first.', 'warn');
+      return;
+    }
     const site = state.world.sites.find((s) => s.discovered && !s.delved && Math.abs(s.x - u.x) + Math.abs(s.y - u.y) <= 1);
     if (!site) toast('No site adjacent.', 'warn');
     else delve(state, u, site);
     refreshAll(app);
-  };
-  document.getElementById('btn-wait').onclick = () => {
+  });
+  on('btn-wait', 'click', () => {
     const u = selectedUnit(stateRef.current);
     if (u) u.moves = 0;
     refreshAll(app);
-  };
-  document.getElementById('btn-next-unit').onclick = () => {
+  });
+  on('btn-next-unit', 'click', () => {
     cycleUnit(stateRef.current);
     refreshAll(app);
-  };
+  });
 
-  document.getElementById('btn-zoom-in').onclick = () => {
+  on('btn-zoom-in', 'click', () => {
+    if (!stateRef.current) return;
     stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom + 0.15, 0.6, 2.2);
     refreshAll(app);
-  };
-  document.getElementById('btn-zoom-out').onclick = () => {
+  });
+  on('btn-zoom-out', 'click', () => {
+    if (!stateRef.current) return;
     stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom - 0.15, 0.6, 2.2);
     refreshAll(app);
-  };
-  document.getElementById('btn-center').onclick = () => {
-    const u = selectedUnit(stateRef.current) || stateRef.current.cities[0];
+  });
+  on('btn-center', 'click', () => {
+    const state = stateRef.current;
+    if (!state) return;
+    const u = selectedUnit(state) || state.cities[0];
     if (u) {
-      stateRef.current.camera.x = u.x;
-      stateRef.current.camera.y = u.y;
+      state.camera.x = u.x;
+      state.camera.y = u.y;
     }
     refreshAll(app);
-  };
+  });
 
   canvas.addEventListener('click', (e) => {
     const state = stateRef.current;
+    if (!state) return;
     const tile = screenToTile(canvas, state, e.clientX, e.clientY);
     if (!tile) return;
     const clicked = state.units.find((u) => u.x === tile.x && u.y === tile.y);
@@ -112,16 +129,11 @@ export function bindUI(app) {
     } else {
       const u = selectedUnit(state);
       if (u) {
-        // path step toward tile (one tile at a time for clarity)
         const dx = Math.sign(tile.x - u.x);
         const dy = Math.sign(tile.y - u.y);
         if (dx || dy) {
-          // prefer axis with larger distance
-          if (Math.abs(tile.x - u.x) >= Math.abs(tile.y - u.y)) {
-            moveUnit(state, u, u.x + dx, u.y);
-          } else {
-            moveUnit(state, u, u.x, u.y + dy);
-          }
+          if (Math.abs(tile.x - u.x) >= Math.abs(tile.y - u.y)) moveUnit(state, u, u.x + dx, u.y);
+          else moveUnit(state, u, u.x, u.y + dy);
           beep('ui');
         }
       }
@@ -131,21 +143,20 @@ export function bindUI(app) {
     refreshAll(app);
   });
 
-  // minimap click
   const mini = document.getElementById('minimap');
-  mini.addEventListener('click', (e) => {
+  mini?.addEventListener('click', (e) => {
     const state = stateRef.current;
+    if (!state || !mini) return;
     const rect = mini.getBoundingClientRect();
-    const x = Math.floor(((e.clientX - rect.left) / rect.width) * state.world.width);
-    const y = Math.floor(((e.clientY - rect.top) / rect.height) * state.world.height);
-    state.camera.x = x;
-    state.camera.y = y;
+    state.camera.x = Math.floor(((e.clientX - rect.left) / rect.width) * state.world.width);
+    state.camera.y = Math.floor(((e.clientY - rect.top) / rect.height) * state.world.height);
     refreshAll(app);
   });
 
   window.addEventListener('keydown', (e) => {
-    if (e.target.matches('input, textarea')) return;
+    if (e.target.matches?.('input, textarea')) return;
     const state = stateRef.current;
+    if (!state) return;
     const u = selectedUnit(state);
     const map = {
       ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
@@ -157,11 +168,11 @@ export function bindUI(app) {
       moveUnit(state, u, u.x + map[e.key][0], u.y + map[e.key][1]);
       refreshAll(app);
     }
-    if (e.key === 'f' || e.key === 'F') {
+    if ((e.key === 'f' || e.key === 'F') && u) {
       foundCity(state, u);
       refreshAll(app);
     }
-    if (e.key === 'g' || e.key === 'G') {
+    if ((e.key === 'g' || e.key === 'G') && u) {
       gather(state, u);
       refreshAll(app);
     }
@@ -181,21 +192,23 @@ export function bindUI(app) {
     }
   });
 
-  document.getElementById('btn-tutorial-next').onclick = () => {
+  on('btn-tutorial-next', 'click', () => {
+    if (!stateRef.current) return;
     stateRef.current.tutorialStep = Math.min(TUTORIAL.length, stateRef.current.tutorialStep + 1);
     refreshAll(app);
-  };
-  document.getElementById('btn-tutorial-skip').onclick = () => {
+  });
+  on('btn-tutorial-skip', 'click', () => {
+    if (!stateRef.current) return;
     stateRef.current.tutorialStep = TUTORIAL.length;
     refreshAll(app);
-  };
-
-  document.getElementById('btn-victory-close').onclick = () => {
-    document.getElementById('victory-modal').classList.add('hidden');
-  };
+  });
+  on('btn-victory-close', 'click', () => {
+    document.getElementById('victory-modal')?.classList.add('hidden');
+  });
 }
 
 function selectedUnit(state) {
+  if (!state?.units?.length) return null;
   return state.units.find((u) => u.id === state.selectedUnitId) || state.units[0];
 }
 
@@ -222,59 +235,84 @@ export function refreshAll(app) {
 
   // resources
   const res = state.player.res;
-  document.getElementById('resources').innerHTML = ['food', 'wood', 'stone', 'gold', 'iron', 'lore']
-    .map((k) => `<span class="res"><i>${k}</i><b>${res[k] || 0}</b></span>`).join('');
+  const resEl = document.getElementById('resources');
+  if (resEl) {
+    resEl.innerHTML = ['food', 'wood', 'stone', 'gold', 'iron', 'lore']
+      .map((k) => `<span class="res"><i>${k}</i><b>${res[k] || 0}</b></span>`).join('');
+  }
 
-  document.getElementById('season-label').textContent = state.season;
-  document.getElementById('year-label').textContent = `Year ${state.year} · Turn ${state.turn}`;
-  document.getElementById('happy-label').textContent = `☺ ${state.player.happiness}`;
+  const seasonEl = document.getElementById('season-label');
+  const yearEl = document.getElementById('year-label');
+  const happyEl = document.getElementById('happy-label');
+  if (seasonEl) seasonEl.textContent = state.season;
+  if (yearEl) yearEl.textContent = `Year ${state.year} · Turn ${state.turn}`;
+  if (happyEl) happyEl.textContent = `☺ ${state.player.happiness}`;
 
   // unit strip
   const u = selectedUnit(state);
-  document.getElementById('unit-info').innerHTML = u
-    ? `<strong>${u.name}</strong> Lv${u.level} · (${u.x},${u.y}) · moves <b>${u.moves}</b> · HP ${u.hp}/${u.maxHp}`
-    : 'No unit selected';
+  const unitInfo = document.getElementById('unit-info');
+  if (unitInfo) {
+    unitInfo.innerHTML = u
+      ? `<strong>${u.name}</strong> Lv${u.level} · (${u.x},${u.y}) · moves <b>${u.moves}</b> · HP ${u.hp}/${u.maxHp}`
+      : 'No unit selected';
+  }
 
   // tabs active
   document.querySelectorAll('#panel-tabs button').forEach((b) => {
     b.classList.toggle('active', b.dataset.panel === state.uiPanel);
   });
 
-  document.getElementById('side-panel').innerHTML = renderPanel(state);
+  const side = document.getElementById('side-panel');
+  if (side) side.innerHTML = renderPanel(state);
   wirePanel(app);
 
   // log
-  document.getElementById('log').innerHTML = state.log.slice(0, 10)
-    .map((l) => `<div><span>Y${l.year}</span> ${l.msg}</div>`).join('');
+  const logEl = document.getElementById('log');
+  if (logEl) {
+    logEl.innerHTML = state.log.slice(0, 10)
+      .map((l) => `<div><span>Y${l.year}</span> ${l.msg}</div>`).join('');
+  }
 
   // event banner
   const banner = document.getElementById('event-banner');
-  if (state.event) {
-    banner.classList.remove('hidden');
-    banner.innerHTML = `<strong>${state.event.name}</strong> — ${state.event.text}
-      <button data-ev="accept">Accept</button>
-      <button data-ev="spend">Spend 15g</button>
-      <button data-ev="endure">Endure</button>`;
-    banner.querySelectorAll('button').forEach((btn) => {
-      btn.onclick = () => {
-        resolveEvent(state, btn.dataset.ev);
-        beep(state.event ? 'ui' : 'good');
-        refreshAll(app);
-      };
-    });
-  } else banner.classList.add('hidden');
+  if (banner) {
+    if (state.event) {
+      banner.classList.remove('hidden');
+      banner.innerHTML = `<strong>${state.event.name}</strong> — ${state.event.text}
+        <button type="button" data-ev="accept">Accept</button>
+        <button type="button" data-ev="spend">Spend 15g</button>
+        <button type="button" data-ev="endure">Endure</button>`;
+      banner.querySelectorAll('button').forEach((btn) => {
+        btn.onclick = () => {
+          resolveEvent(state, btn.dataset.ev);
+          beep('good');
+          refreshAll(app);
+        };
+      });
+    } else {
+      banner.classList.add('hidden');
+      banner.innerHTML = '';
+    }
+  }
 
   // tutorial
   const tip = document.getElementById('tutorial');
-  if (state.tutorialStep < TUTORIAL.length) {
-    const step = TUTORIAL[state.tutorialStep];
-    tip.classList.remove('hidden');
-    tip.querySelector('.tutorial-title').textContent = `${state.tutorialStep + 1}/${TUTORIAL.length} · ${step.title}`;
-    tip.querySelector('.tutorial-body').textContent = step.body;
-  } else tip.classList.add('hidden');
+  if (tip) {
+    if (state.tutorialStep < TUTORIAL.length) {
+      const step = TUTORIAL[state.tutorialStep];
+      tip.classList.remove('hidden');
+      const title = tip.querySelector('.tutorial-title');
+      const body = tip.querySelector('.tutorial-body');
+      if (title) title.textContent = `${state.tutorialStep + 1}/${TUTORIAL.length} · ${step.title}`;
+      if (body) body.textContent = step.body;
+    } else {
+      tip.classList.add('hidden');
+    }
+  }
 
-  renderMap(app.canvas, state);
-  renderMinimap(document.getElementById('minimap'), state);
+  if (app.canvas) renderMap(app.canvas, state);
+  const mini = document.getElementById('minimap');
+  if (mini) renderMinimap(mini, state);
   maybeVictory(app);
 }
 
