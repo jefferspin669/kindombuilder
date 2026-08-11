@@ -66,16 +66,19 @@ export function bindUI(app) {
   on('btn-clear-saves', 'click', () => app.clearSaves());
 
   on('btn-found', 'click', () => {
+    if (!stateRef.current) return;
     const u = selectedUnit(stateRef.current);
     if (foundCity(stateRef.current, u)) beep('build');
     refreshAll(app);
   });
   on('btn-gather', 'click', () => {
+    if (!stateRef.current) return;
     gather(stateRef.current, selectedUnit(stateRef.current));
     refreshAll(app);
   });
   on('btn-delve', 'click', () => {
     const state = stateRef.current;
+    if (!state) return;
     const u = selectedUnit(state);
     if (!u) {
       toast('Select a unit first.', 'warn');
@@ -87,11 +90,13 @@ export function bindUI(app) {
     refreshAll(app);
   });
   on('btn-wait', 'click', () => {
+    if (!stateRef.current) return;
     const u = selectedUnit(stateRef.current);
     if (u) u.moves = 0;
     refreshAll(app);
   });
   on('btn-next-unit', 'click', () => {
+    if (!stateRef.current) return;
     cycleUnit(stateRef.current);
     refreshAll(app);
   });
