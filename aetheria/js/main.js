@@ -27,8 +27,8 @@ const app = {
 function fitCanvas() {
   const wrap = document.querySelector('.map-stage');
   if (!wrap || !canvas) return;
-  const w = Math.min(1100, Math.max(320, wrap.clientWidth - 8));
-  const h = Math.min(720, Math.max(360, window.innerHeight - 220));
+  const w = Math.max(320, wrap.clientWidth);
+  const h = Math.max(360, wrap.clientHeight || (window.innerHeight - 240));
   canvas.width = Math.floor(w);
   canvas.height = Math.floor(h);
 }
