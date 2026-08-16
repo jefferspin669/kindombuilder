@@ -117,7 +117,8 @@ body {
   background: var(--info-soft);
 }
 
-.btn-end-turn {
+.btn.btn-end-turn,
+button.btn-end-turn {
   background: linear-gradient(180deg, #67c878, var(--good-deep));
   color: #07140c;
   border: none;
@@ -128,7 +129,8 @@ body {
   min-width: 7.5rem;
 }
 
-.btn-end-turn:hover:not(:disabled) {
+.btn.btn-end-turn:hover:not(:disabled),
+button.btn-end-turn:hover:not(:disabled) {
   background: linear-gradient(180deg, #78d488, #4a9f62);
 }
 
