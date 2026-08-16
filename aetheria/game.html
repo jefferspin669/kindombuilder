@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/game.css" />
@@ -30,13 +30,16 @@
 
     <div id="app" class="hidden">
       <header class="bar">
-        <a class="logo" href="index.html">Aetheria</a>
+        <div class="bar-brand">
+          <a class="logo" href="index.html">Aetheria</a>
+          <span id="kingdom-name" class="kingdom-name">Kingdom</span>
+        </div>
         <div id="resources" class="resources"></div>
         <div class="meta">
-          <span id="happy-label">☺ 65</span>
-          <span id="season-label">Spring</span>
-          <span id="year-label">Year 1</span>
-          <button type="button" id="btn-end-turn" class="btn">End Turn</button>
+          <span id="happy-label" class="meta-pill meta-happy">☺ 65</span>
+          <span id="season-label" class="meta-pill">Spring</span>
+          <span id="year-label" class="meta-pill meta-turn">Year 1</span>
+          <button type="button" id="btn-end-turn" class="btn btn-primary">End Turn</button>
           <button type="button" id="btn-menu" class="btn ghost">Menu</button>
         </div>
       </header>
@@ -59,21 +62,35 @@
           <div class="action-bar">
             <div id="unit-info" class="unit-info">Select a unit</div>
             <div class="action-buttons">
-              <button type="button" id="btn-found" class="btn">Found City (F)</button>
-              <button type="button" id="btn-gather" class="btn">Gather (G)</button>
-              <button type="button" id="btn-delve" class="btn">Delve</button>
-              <button type="button" id="btn-wait" class="btn ghost">Wait</button>
-              <button type="button" id="btn-next-unit" class="btn ghost">Next Unit</button>
-              <button type="button" id="btn-zoom-out" class="btn ghost">−</button>
-              <button type="button" id="btn-zoom-in" class="btn ghost">+</button>
-              <button type="button" id="btn-center" class="btn ghost">Center</button>
+              <button type="button" id="btn-found" class="btn btn-action btn-primary" title="Found City (F)">
+                <span class="btn-ico" aria-hidden="true">◆</span><span class="btn-label">Found City</span>
+              </button>
+              <button type="button" id="btn-gather" class="btn btn-action btn-secondary" title="Gather (G)">
+                <span class="btn-ico" aria-hidden="true">▣</span><span class="btn-label">Gather</span>
+              </button>
+              <button type="button" id="btn-delve" class="btn btn-action btn-secondary" title="Delve ruins">
+                <span class="btn-ico" aria-hidden="true">◈</span><span class="btn-label">Delve</span>
+              </button>
+              <button type="button" id="btn-wait" class="btn btn-action btn-secondary" title="Skip remaining moves">
+                <span class="btn-ico" aria-hidden="true">▷</span><span class="btn-label">Wait</span>
+              </button>
+              <button type="button" id="btn-next-unit" class="btn btn-action btn-utility" title="Next Unit (Tab)">
+                <span class="btn-ico" aria-hidden="true">⇄</span><span class="btn-label">Next Unit</span>
+              </button>
+              <div class="zoom-group" role="group" aria-label="Map zoom">
+                <button type="button" id="btn-zoom-out" class="btn btn-action btn-utility" title="Zoom out">−</button>
+                <button type="button" id="btn-zoom-in" class="btn btn-action btn-utility" title="Zoom in">+</button>
+                <button type="button" id="btn-center" class="btn btn-action btn-utility" title="Center on selection">◎</button>
+              </div>
             </div>
           </div>
           <div id="log" class="log"></div>
         </section>
 
         <aside class="side">
-          <canvas id="minimap" width="260" height="170"></canvas>
+          <div class="minimap-wrap">
+            <canvas id="minimap" width="280" height="160"></canvas>
+          </div>
           <div id="panel-tabs" class="panel-tabs"></div>
           <div id="side-panel" class="side-panel"></div>
         </aside>

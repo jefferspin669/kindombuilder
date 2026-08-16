@@ -7,7 +7,43 @@ import { renderMap, renderMinimap, screenToTile } from './render.js';
 import { beep } from './audio.js';
 import { toast, clamp } from './utils.js';
 
-const PANELS = ['city', 'tech', 'diplo', 'explore', 'wonders', 'chronicle', 'missions', 'realm'];
+const TAB_GROUPS = [
+  {
+    id: 'kingdom',
+    label: 'Kingdom',
+    tabs: [
+      { id: 'city', label: 'City', icon: '⌂' },
+      { id: 'realm', label: 'Realm', icon: '✦' },
+      { id: 'chronicle', label: 'Chronicle', icon: '☰' },
+    ],
+  },
+  {
+    id: 'expansion',
+    label: 'Expansion',
+    tabs: [
+      { id: 'explore', label: 'Explore', icon: '◎' },
+      { id: 'missions', label: 'Missions', icon: '⚑' },
+      { id: 'wonders', label: 'Wonders', icon: '▲' },
+    ],
+  },
+  {
+    id: 'strategy',
+    label: 'Strategy',
+    tabs: [
+      { id: 'tech', label: 'Tech', icon: '◇' },
+      { id: 'diplo', label: 'Diplo', icon: '⇄' },
+    ],
+  },
+];
+
+const RES_ICONS = {
+  food: '◆',
+  wood: '▣',
+  stone: '▢',
+  gold: '✶',
+  iron: '▮',
+  lore: '✦',
+};
 
 function on(id, event, handler) {
   const el = document.getElementById(id);
@@ -26,18 +62,28 @@ export function bindUI(app) {
   const tabs = document.getElementById('panel-tabs');
   if (tabs) {
     tabs.innerHTML = '';
-    PANELS.forEach((id) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = label(id);
-      b.dataset.panel = id;
-      b.onclick = () => {
-        if (!stateRef.current) return;
-        stateRef.current.uiPanel = id;
-        beep('ui');
-        refreshAll(app);
-      };
-      tabs.appendChild(b);
+    TAB_GROUPS.forEach((group) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'tab-group';
+      wrap.innerHTML = `<div class="tab-group-label">${group.label}</div>`;
+      const row = document.createElement('div');
+      row.className = 'tab-row';
+      if (group.tabs.length === 2) row.style.gridTemplateColumns = '1fr 1fr';
+      group.tabs.forEach((tab) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.dataset.panel = tab.id;
+        b.innerHTML = `<span class="tab-ico" aria-hidden="true">${tab.icon}</span><span>${tab.label}</span>`;
+        b.onclick = () => {
+          if (!stateRef.current) return;
+          stateRef.current.uiPanel = tab.id;
+          beep('ui');
+          refreshAll(app);
+        };
+        row.appendChild(b);
+      });
+      wrap.appendChild(row);
+      tabs.appendChild(wrap);
     });
   }
 
@@ -103,12 +149,12 @@ export function bindUI(app) {
 
   on('btn-zoom-in', 'click', () => {
     if (!stateRef.current) return;
-    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom + 0.15, 0.6, 2.2);
+    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom + 0.15, 0.9, 2.6);
     refreshAll(app);
   });
   on('btn-zoom-out', 'click', () => {
     if (!stateRef.current) return;
-    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom - 0.15, 0.6, 2.2);
+    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom - 0.15, 0.9, 2.6);
     refreshAll(app);
   });
   on('btn-center', 'click', () => {
@@ -118,6 +164,7 @@ export function bindUI(app) {
     if (u) {
       state.camera.x = u.x;
       state.camera.y = u.y;
+      state.selectedTile = { x: u.x, y: u.y };
     }
     refreshAll(app);
   });
@@ -127,6 +174,7 @@ export function bindUI(app) {
     if (!state) return;
     const tile = screenToTile(canvas, state, e.clientX, e.clientY);
     if (!tile) return;
+    state.selectedTile = { x: tile.x, y: tile.y };
     const clicked = state.units.find((u) => u.x === tile.x && u.y === tile.y);
     if (clicked) {
       state.selectedUnitId = clicked.id;
@@ -155,6 +203,7 @@ export function bindUI(app) {
     const rect = mini.getBoundingClientRect();
     state.camera.x = Math.floor(((e.clientX - rect.left) / rect.width) * state.world.width);
     state.camera.y = Math.floor(((e.clientY - rect.top) / rect.height) * state.world.height);
+    state.selectedTile = { x: state.camera.x, y: state.camera.y };
     refreshAll(app);
   });
 
@@ -224,13 +273,35 @@ function cycleUnit(state) {
   state.selectedUnitId = next.id;
   state.camera.x = next.x;
   state.camera.y = next.y;
+  state.selectedTile = { x: next.x, y: next.y };
 }
 
-function label(id) {
-  return ({
-    city: 'City', tech: 'Tech', diplo: 'Diplo', explore: 'Explore',
-    wonders: 'Wonders', chronicle: 'Chronicle', missions: 'Missions', realm: 'Realm',
-  })[id] || id;
+function canFound(state, unit) {
+  if (!unit || unit.type !== 'settler' || unit.moves <= 0) return false;
+  const t = state.world.tiles[unit.y * state.world.width + unit.x];
+  if (!t || t.type === 'water' || t.type === 'mountain' || t.type === 'volcano') return false;
+  return !state.cities.some((c) => Math.abs(c.x - unit.x) + Math.abs(c.y - unit.y) < 3);
+}
+
+function canGather(state, unit) {
+  if (!unit || unit.type !== 'worker' || unit.moves <= 0) return false;
+  return state.world.deposits.some((d) => d.amount > 0 && d.x === unit.x && d.y === unit.y);
+}
+
+function canDelve(state, unit) {
+  if (!unit || unit.moves <= 0) return false;
+  return state.world.sites.some((s) => s.discovered && !s.delved && Math.abs(s.x - unit.x) + Math.abs(s.y - unit.y) <= 1);
+}
+
+function setActionState(id, enabled, primary = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.disabled = !enabled;
+  el.classList.toggle('is-disabled', !enabled);
+  if (primary) {
+    el.classList.toggle('btn-primary', enabled);
+    el.classList.toggle('btn-secondary', !enabled);
+  }
 }
 
 export function refreshAll(app) {
@@ -238,12 +309,15 @@ export function refreshAll(app) {
   if (!state) return;
   if (!state.uiPanel) state.uiPanel = 'city';
 
+  const kingdom = document.getElementById('kingdom-name');
+  if (kingdom) kingdom.textContent = state.player.name;
+
   // resources
   const res = state.player.res;
   const resEl = document.getElementById('resources');
   if (resEl) {
     resEl.innerHTML = ['food', 'wood', 'stone', 'gold', 'iron', 'lore']
-      .map((k) => `<span class="res"><i>${k}</i><b>${res[k] || 0}</b></span>`).join('');
+      .map((k) => `<span class="res"><span class="res-ico" aria-hidden="true">${RES_ICONS[k]}</span><i>${k}</i><b>${res[k] || 0}</b></span>`).join('');
   }
 
   const seasonEl = document.getElementById('season-label');
@@ -251,16 +325,22 @@ export function refreshAll(app) {
   const happyEl = document.getElementById('happy-label');
   if (seasonEl) seasonEl.textContent = state.season;
   if (yearEl) yearEl.textContent = `Year ${state.year} · Turn ${state.turn}`;
-  if (happyEl) happyEl.textContent = `☺ ${state.player.happiness}`;
+  if (happyEl) happyEl.textContent = `Joy ${state.player.happiness}`;
 
-  // unit strip
+  // unit strip + action availability
   const u = selectedUnit(state);
   const unitInfo = document.getElementById('unit-info');
   if (unitInfo) {
     unitInfo.innerHTML = u
-      ? `<strong>${u.name}</strong> Lv${u.level} · (${u.x},${u.y}) · moves <b>${u.moves}</b> · HP ${u.hp}/${u.maxHp}`
+      ? `<strong>${u.name}</strong><div class="unit-meta">Lv${u.level} · (${u.x},${u.y}) · moves <b>${u.moves}</b> · HP ${u.hp}/${u.maxHp}</div>`
       : 'No unit selected';
   }
+
+  setActionState('btn-found', canFound(state, u), true);
+  setActionState('btn-gather', canGather(state, u));
+  setActionState('btn-delve', canDelve(state, u));
+  setActionState('btn-wait', Boolean(u && u.moves > 0));
+  setActionState('btn-next-unit', state.units.length > 1);
 
   // tabs active
   document.querySelectorAll('#panel-tabs button').forEach((b) => {
@@ -275,7 +355,7 @@ export function refreshAll(app) {
   const logEl = document.getElementById('log');
   if (logEl) {
     logEl.innerHTML = state.log.slice(0, 10)
-      .map((l) => `<div><span>Y${l.year}</span> ${l.msg}</div>`).join('');
+      .map((l) => `<div><span>Y${l.year}</span><span>${l.msg}</span></div>`).join('');
   }
 
   // event banner

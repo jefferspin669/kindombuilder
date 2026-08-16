@@ -45,7 +45,8 @@ export function newCampaign(opts = {}) {
     log: [],
     selectedUnitId: units[0].id,
     selectedCityId: null,
-    camera: { x: spawn.x, y: spawn.y, zoom: 1 },
+    camera: { x: spawn.x, y: spawn.y, zoom: 1.55 },
+    selectedTile: { x: spawn.x, y: spawn.y },
     event: null,
     missions: [],
     tutorialStep: 0,
@@ -202,6 +203,7 @@ export function moveUnit(state, unit, x, y) {
   reveal(state.world, x, y, vision);
   state.camera.x = x;
   state.camera.y = y;
+  state.selectedTile = { x, y };
 
   // discover sites
   for (const site of state.world.sites) {
@@ -698,6 +700,12 @@ export function serialize(state) {
 
 export function revive(data) {
   data.rand = mulberry32((data.seed || 1) + (data.turn || 0));
+  if (!data.camera) data.camera = { x: 0, y: 0, zoom: 1.55 };
+  if (data.camera.zoom == null || data.camera.zoom < 1.2) data.camera.zoom = 1.55;
+  if (!data.selectedTile) {
+    const u = data.units?.find((unit) => unit.id === data.selectedUnitId) || data.units?.[0];
+    data.selectedTile = u ? { x: u.x, y: u.y } : { x: data.camera.x, y: data.camera.y };
+  }
   return data;
 }
 

@@ -2,17 +2,17 @@ import { TERRAIN, UNITS } from './data.js';
 import { tileAt } from './world.js';
 
 const SEASON_TINT = {
-  Spring: 'rgba(120,200,120,0.10)',
-  Summer: 'rgba(255,220,100,0.10)',
-  Autumn: 'rgba(210,140,60,0.14)',
-  Winter: 'rgba(200,220,255,0.20)',
+  Spring: 'rgba(120,200,120,0.08)',
+  Summer: 'rgba(255,220,100,0.08)',
+  Autumn: 'rgba(210,140,60,0.12)',
+  Winter: 'rgba(200,220,255,0.16)',
 };
 
 export function renderMap(canvas, state) {
   if (!canvas || !state) return;
   const ctx = canvas.getContext('2d');
   const { world, camera } = state;
-  const tile = Math.max(8, Math.floor(18 * (camera.zoom || 1)));
+  const tile = Math.max(12, Math.floor(28 * (camera.zoom || 1.55)));
   const viewW = Math.ceil(canvas.width / tile) + 2;
   const viewH = Math.ceil(canvas.height / tile) + 2;
   const originX = clamp(Math.floor(camera.x - viewW / 2), 0, Math.max(0, world.width - viewW));
@@ -22,6 +22,9 @@ export function renderMap(canvas, state) {
   ctx.fillStyle = '#0a1210';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // subtle base grain so empty/fog areas aren't a flat void
+  drawTerrainGrain(ctx, canvas.width, canvas.height);
+
   for (let y = originY; y < Math.min(world.height, originY + viewH); y++) {
     for (let x = originX; x < Math.min(world.width, originX + viewW); x++) {
       const t = tileAt(world.tiles, world.width, x, y);
@@ -29,31 +32,24 @@ export function renderMap(canvas, state) {
       const px = (x - originX) * tile;
       const py = (y - originY) * tile;
       if (t.fog) {
-        ctx.fillStyle = t.explored ? '#152019' : '#0b100e';
-        ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
+        paintFogTile(ctx, px, py, tile, t.explored, x, y);
         continue;
       }
-      ctx.fillStyle = TERRAIN[t.type]?.color || '#333';
-      ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
+      paintTerrain(ctx, t, px, py, tile, x, y, state);
 
       if (t.river) {
-        ctx.fillStyle = state.season === 'Winter' ? '#cfe3f2' : '#3f8fad';
-        ctx.fillRect(px + tile * 0.4, py, tile * 0.2, tile + 0.5);
+        ctx.fillStyle = state.season === 'Winter' ? '#cfe3f2' : '#4aa3c4';
+        ctx.fillRect(px + tile * 0.38, py, tile * 0.24, tile + 0.5);
       }
       if (t.road) {
-        ctx.fillStyle = '#6d5a3f';
-        ctx.fillRect(px + tile * 0.35, py + tile * 0.35, tile * 0.3, tile * 0.3);
-      }
-      if (t.type === 'forest') {
-        ctx.fillStyle = 'rgba(15,70,30,0.35)';
-        ctx.fillRect(px + (state.turn % 3), py + 2, tile * 0.35, tile * 0.35);
-      }
-      if (t.type === 'coast') {
-        ctx.fillStyle = `rgba(180,220,240,${0.12 + (state.turn % 3) * 0.05})`;
-        ctx.fillRect(px, py + tile * 0.65, tile, tile * 0.2);
+        ctx.fillStyle = '#8a7350';
+        ctx.fillRect(px + tile * 0.32, py + tile * 0.32, tile * 0.36, tile * 0.36);
       }
     }
   }
+
+  // soft grid over visible land for readability
+  drawVisibleGrid(ctx, world, originX, originY, viewW, viewH, tile);
 
   // deposits
   for (const d of world.deposits) {
@@ -63,10 +59,18 @@ export function renderMap(canvas, state) {
     if (!t || t.fog) continue;
     const px = (d.x - originX) * tile + tile / 2;
     const py = (d.y - originY) * tile + tile / 2;
+    const r = Math.max(3, tile * 0.2);
+    ctx.fillStyle = '#0b120e';
+    ctx.beginPath();
+    ctx.arc(px, py + 1, r + 1, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = depositColor(d.type);
     ctx.beginPath();
-    ctx.arc(px, py, Math.max(2, tile * 0.18), 0, Math.PI * 2);
+    ctx.arc(px, py, r, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
   }
 
   // sites
@@ -77,8 +81,16 @@ export function renderMap(canvas, state) {
     if (!t || t.fog) continue;
     const px = (s.x - originX) * tile;
     const py = (s.y - originY) * tile;
-    ctx.fillStyle = s.delved ? '#777' : '#e2c15a';
-    ctx.fillRect(px + tile * 0.2, py + tile * 0.2, tile * 0.6, tile * 0.6);
+    ctx.fillStyle = s.delved ? '#6a6a6a' : '#e2c15a';
+    ctx.strokeStyle = s.delved ? '#444' : '#fff1b8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(px + tile * 0.5, py + tile * 0.18);
+    ctx.lineTo(px + tile * 0.82, py + tile * 0.82);
+    ctx.lineTo(px + tile * 0.18, py + tile * 0.82);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
   }
 
   // cities
@@ -87,16 +99,23 @@ export function renderMap(canvas, state) {
     const px = (city.x - originX) * tile;
     const py = (city.y - originY) * tile;
     const scale = { village: 0.55, town: 0.7, city: 0.85, capital: 1 }[city.stage] || 0.55;
+    const size = tile * scale;
+    const ox = px + (tile - size) / 2;
+    const oy = py + (tile - size) / 2;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(ox + 2, oy + 2, size, size);
     ctx.fillStyle = state.player.color;
-    ctx.fillRect(px + tile * (0.5 - scale / 2), py + tile * (0.5 - scale / 2), tile * scale, tile * scale);
+    ctx.fillRect(ox, oy, size, size);
+    ctx.strokeStyle = '#f2e6c9';
+    ctx.lineWidth = Math.max(1.5, tile * 0.06);
+    ctx.strokeRect(ox + 0.5, oy + 0.5, size - 1, size - 1);
     if (city.buildings.includes('walls')) {
-      ctx.strokeStyle = '#444';
+      ctx.strokeStyle = '#3a3a3a';
       ctx.lineWidth = 2;
-      ctx.strokeRect(px + 2, py + 2, tile - 4, tile - 4);
+      ctx.strokeRect(ox - 2, oy - 2, size + 4, size + 4);
     }
-    // smoke
-    ctx.fillStyle = 'rgba(200,200,200,0.45)';
-    ctx.fillRect(px + tile * 0.65, py + tile * 0.1 - (state.turn % 4), 2, 5);
+    ctx.fillStyle = 'rgba(220,220,220,0.5)';
+    ctx.fillRect(ox + size * 0.7, oy - (state.turn % 4), Math.max(2, tile * 0.08), Math.max(4, tile * 0.18));
   }
 
   // rivals
@@ -105,6 +124,7 @@ export function renderMap(canvas, state) {
     const t = tileAt(world.tiles, world.width, r.capital.x, r.capital.y);
     if (!t || t.fog) continue;
     if (r.capital.x < originX || r.capital.y < originY) continue;
+    if (r.capital.x >= originX + viewW || r.capital.y >= originY + viewH) continue;
     const px = (r.capital.x - originX) * tile + tile / 2;
     const py = (r.capital.y - originY) * tile + tile / 2;
     ctx.fillStyle = r.color;
@@ -115,6 +135,9 @@ export function renderMap(canvas, state) {
     ctx.lineTo(px - tile * 0.35, py);
     ctx.closePath();
     ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
   }
 
   // raiders
@@ -126,6 +149,9 @@ export function renderMap(canvas, state) {
     const py = (r.y - originY) * tile;
     ctx.fillStyle = '#d06055';
     ctx.fillRect(px + tile * 0.2, py + tile * 0.2, tile * 0.6, tile * 0.6);
+    ctx.strokeStyle = '#ffd0c8';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(px + tile * 0.2, py + tile * 0.2, tile * 0.6, tile * 0.6);
   }
 
   // units
@@ -134,20 +160,52 @@ export function renderMap(canvas, state) {
     const px = (u.x - originX) * tile + tile / 2;
     const py = (u.y - originY) * tile + tile / 2;
     const selected = u.id === state.selectedUnitId;
-    ctx.fillStyle = selected ? '#fff' : '#f2e6c9';
+    const radius = Math.max(5, tile * 0.3);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
     ctx.beginPath();
-    ctx.arc(px, py, Math.max(4, tile * 0.28), 0, Math.PI * 2);
+    ctx.arc(px + 1, py + 2, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = selected ? '#ffffff' : '#f2e6c9';
+    ctx.beginPath();
+    ctx.arc(px, py, radius, 0, Math.PI * 2);
     ctx.fill();
     if (selected) {
-      ctx.strokeStyle = '#c9783a';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#c9a05a';
+      ctx.lineWidth = Math.max(2.5, tile * 0.1);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(122,168,196,0.85)';
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(
+        (u.x - originX) * tile + 1.5,
+        (u.y - originY) * tile + 1.5,
+        tile - 3,
+        tile - 3,
+      );
+    } else {
+      ctx.strokeStyle = 'rgba(30,50,40,0.55)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
     ctx.fillStyle = '#1c3a2a';
-    ctx.font = `bold ${Math.max(10, tile * 0.45)}px Outfit, sans-serif`;
+    ctx.font = `bold ${Math.max(11, tile * 0.42)}px Figtree, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(UNITS[u.type]?.glyph || '?', px, py + 1);
+  }
+
+  // selected tile outline (when no unit ring already draws it)
+  if (state.selectedTile) {
+    const { x, y } = state.selectedTile;
+    if (x >= originX && y >= originY && x < originX + viewW && y < originY + viewH) {
+      const px = (x - originX) * tile;
+      const py = (y - originY) * tile;
+      ctx.strokeStyle = 'rgba(122,168,196,0.95)';
+      ctx.lineWidth = Math.max(2, tile * 0.08);
+      ctx.strokeRect(px + 1.5, py + 1.5, tile - 3, tile - 3);
+      ctx.strokeStyle = 'rgba(201,160,90,0.55)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px + 3.5, py + 3.5, tile - 7, tile - 7);
+    }
   }
 
   // season wash
@@ -165,6 +223,117 @@ export function renderMap(canvas, state) {
   state._view = { originX, originY, tile };
 }
 
+function paintFogTile(ctx, px, py, tile, explored, x, y) {
+  const base = explored ? '#18241c' : '#0b100e';
+  ctx.fillStyle = base;
+  ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
+  if (explored) {
+    ctx.fillStyle = ((x + y) % 2 === 0) ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.08)';
+    ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
+    ctx.strokeStyle = 'rgba(140,160,145,0.05)';
+    ctx.strokeRect(px + 0.5, py + 0.5, tile - 1, tile - 1);
+  } else {
+    // faint unknown hatch
+    ctx.strokeStyle = 'rgba(255,255,255,0.015)';
+    ctx.beginPath();
+    ctx.moveTo(px, py + tile);
+    ctx.lineTo(px + tile, py);
+    ctx.stroke();
+  }
+}
+
+function paintTerrain(ctx, t, px, py, tile, x, y, state) {
+  const def = TERRAIN[t.type] || { color: '#333' };
+  ctx.fillStyle = def.color;
+  ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
+
+  // checker / noise variation
+  const shade = ((x * 17 + y * 31) % 5) * 0.015;
+  ctx.fillStyle = `rgba(0,0,0,${0.04 + shade})`;
+  ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
+
+  if (t.type === 'grass') {
+    ctx.fillStyle = 'rgba(180,230,140,0.18)';
+    for (let i = 0; i < 3; i++) {
+      const gx = px + ((x * 3 + i * 7) % Math.max(2, tile - 4)) + 2;
+      const gy = py + ((y * 5 + i * 11) % Math.max(2, tile - 4)) + 2;
+      ctx.fillRect(gx, gy, Math.max(1, tile * 0.08), Math.max(2, tile * 0.16));
+    }
+  }
+  if (t.type === 'forest' || t.type === 'jungle') {
+    ctx.fillStyle = t.type === 'jungle' ? 'rgba(10,50,25,0.4)' : 'rgba(15,70,30,0.4)';
+    ctx.beginPath();
+    ctx.moveTo(px + tile * 0.5, py + tile * 0.15);
+    ctx.lineTo(px + tile * 0.78, py + tile * 0.62);
+    ctx.lineTo(px + tile * 0.22, py + tile * 0.62);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = 'rgba(20,90,40,0.35)';
+    ctx.fillRect(px + tile * 0.45, py + tile * 0.55, tile * 0.12, tile * 0.25);
+  }
+  if (t.type === 'mountain' || t.type === 'hill' || t.type === 'volcano') {
+    ctx.fillStyle = t.type === 'volcano' ? 'rgba(90,30,20,0.45)' : 'rgba(255,255,255,0.2)';
+    ctx.beginPath();
+    ctx.moveTo(px + tile * 0.5, py + tile * 0.12);
+    ctx.lineTo(px + tile * 0.88, py + tile * 0.82);
+    ctx.lineTo(px + tile * 0.12, py + tile * 0.82);
+    ctx.closePath();
+    ctx.fill();
+    if (t.type === 'mountain') {
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath();
+      ctx.moveTo(px + tile * 0.5, py + tile * 0.12);
+      ctx.lineTo(px + tile * 0.62, py + tile * 0.35);
+      ctx.lineTo(px + tile * 0.38, py + tile * 0.35);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  if (t.type === 'water') {
+    ctx.fillStyle = `rgba(120,200,230,${0.08 + ((x + y + state.turn) % 3) * 0.03})`;
+    ctx.fillRect(px, py + tile * 0.35, tile, tile * 0.12);
+    ctx.fillRect(px, py + tile * 0.62, tile, tile * 0.08);
+  }
+  if (t.type === 'coast') {
+    ctx.fillStyle = `rgba(180,220,240,${0.14 + (state.turn % 3) * 0.04})`;
+    ctx.fillRect(px, py + tile * 0.62, tile, tile * 0.22);
+  }
+  if (t.type === 'desert') {
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(px + 2, py + tile * 0.55, tile - 4, 1.5);
+  }
+  if (t.type === 'swamp') {
+    ctx.fillStyle = 'rgba(40,80,50,0.3)';
+    ctx.fillRect(px + tile * 0.2, py + tile * 0.55, tile * 0.25, tile * 0.15);
+    ctx.fillRect(px + tile * 0.55, py + tile * 0.35, tile * 0.2, tile * 0.12);
+  }
+}
+
+function drawTerrainGrain(ctx, w, h) {
+  ctx.fillStyle = 'rgba(255,255,255,0.015)';
+  for (let i = 0; i < 40; i++) {
+    const x = (i * 97) % w;
+    const y = (i * 53) % h;
+    ctx.fillRect(x, y, 2, 2);
+  }
+}
+
+function drawVisibleGrid(ctx, world, originX, originY, viewW, viewH, tile) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = 1;
+  for (let y = originY; y < Math.min(world.height, originY + viewH); y++) {
+    for (let x = originX; x < Math.min(world.width, originX + viewW); x++) {
+      const t = tileAt(world.tiles, world.width, x, y);
+      if (!t || t.fog) continue;
+      const px = (x - originX) * tile;
+      const py = (y - originY) * tile;
+      ctx.strokeRect(px + 0.5, py + 0.5, tile - 1, tile - 1);
+    }
+  }
+  ctx.restore();
+}
+
 export function renderMinimap(canvas, state) {
   if (!canvas || !state) return;
   const ctx = canvas.getContext('2d');
@@ -176,7 +345,7 @@ export function renderMinimap(canvas, state) {
     if (t.fog && !t.explored) {
       ctx.fillStyle = '#0b100e';
     } else if (t.fog) {
-      ctx.fillStyle = '#18241c';
+      ctx.fillStyle = '#1a2820';
     } else {
       ctx.fillStyle = TERRAIN[t.type]?.color || '#333';
     }
@@ -192,7 +361,8 @@ export function renderMinimap(canvas, state) {
     const main = document.getElementById('map');
     const vw = (main.width / tile);
     const vh = (main.height / tile);
-    ctx.strokeStyle = '#c9783a';
+    ctx.strokeStyle = '#c9a05a';
+    ctx.lineWidth = 1.5;
     ctx.strokeRect(originX * tw, originY * th, vw * tw, vh * th);
   }
 }
@@ -212,7 +382,7 @@ export function screenToTile(canvas, state, clientX, clientY) {
 }
 
 function depositColor(type) {
-  return ({ food: '#a3d977', wood: '#6b4a2a', stone: '#bbb', gold: '#e2c15a', iron: '#8a93a0' })[type] || '#fff';
+  return ({ food: '#a3d977', wood: '#8b5a2b', stone: '#c8c8c8', gold: '#e2c15a', iron: '#9aa3b0' })[type] || '#fff';
 }
 
 function clamp(n, a, b) {
