@@ -1,43 +1,23 @@
-import { BUILDINGS, UNITS, TECHS, WONDERS, TUTORIAL } from './data.js';
+import { BUILDINGS, UNITS, TECHS, TUTORIAL } from './data.js';
 import {
   foundCity, moveUnit, gather, delve, queueBuilding, queueUnit,
-  startWonder, queueResearch, diploAction, endTurn, resolveEvent,
+  startWonder, queueResearch, diploAction, endTurn, resolveEvent, estimateYields,
 } from './game.js';
 import { renderMap, renderMinimap, screenToTile } from './render.js';
 import { beep } from './audio.js';
 import { toast, clamp } from './utils.js';
 
-const TAB_GROUPS = [
-  {
-    id: 'kingdom',
-    label: 'Kingdom',
-    tabs: [
-      { id: 'city', label: 'City', icon: '⌂' },
-      { id: 'realm', label: 'Realm', icon: '✦' },
-      { id: 'chronicle', label: 'Chronicle', icon: '☰' },
-    ],
-  },
-  {
-    id: 'expansion',
-    label: 'Expansion',
-    tabs: [
-      { id: 'explore', label: 'Explore', icon: '◎' },
-      { id: 'missions', label: 'Missions', icon: '⚑' },
-      { id: 'wonders', label: 'Wonders', icon: '▲' },
-    ],
-  },
-  {
-    id: 'strategy',
-    label: 'Strategy',
-    tabs: [
-      { id: 'tech', label: 'Tech', icon: '◇' },
-      { id: 'diplo', label: 'Diplo', icon: '⇄' },
-    ],
-  },
+const PRIMARY_TABS = [
+  { id: 'city', label: 'City', icon: '⌂' },
+  { id: 'tech', label: 'Tech', icon: '◇' },
+  { id: 'diplo', label: 'Diplo', icon: '⇄' },
+  { id: 'explore', label: 'Explore', icon: '◎' },
+  { id: 'wonders', label: 'Wonders', icon: '▲' },
+  { id: 'more', label: 'More', icon: '···' },
 ];
 
 const RES_ICONS = {
-  food: '◆',
+  food: '◈',
   wood: '▣',
   stone: '▢',
   gold: '✶',
@@ -58,32 +38,21 @@ export function bindUI(app) {
   const { stateRef, canvas } = app;
   if (!canvas) throw new Error('Map canvas missing');
 
-  // panel tabs
   const tabs = document.getElementById('panel-tabs');
   if (tabs) {
     tabs.innerHTML = '';
-    TAB_GROUPS.forEach((group) => {
-      const wrap = document.createElement('div');
-      wrap.className = 'tab-group';
-      wrap.innerHTML = `<div class="tab-group-label">${group.label}</div>`;
-      const row = document.createElement('div');
-      row.className = 'tab-row';
-      if (group.tabs.length === 2) row.style.gridTemplateColumns = '1fr 1fr';
-      group.tabs.forEach((tab) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.dataset.panel = tab.id;
-        b.innerHTML = `<span class="tab-ico" aria-hidden="true">${tab.icon}</span><span>${tab.label}</span>`;
-        b.onclick = () => {
-          if (!stateRef.current) return;
-          stateRef.current.uiPanel = tab.id;
-          beep('ui');
-          refreshAll(app);
-        };
-        row.appendChild(b);
-      });
-      wrap.appendChild(row);
-      tabs.appendChild(wrap);
+    PRIMARY_TABS.forEach((tab) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.panel = tab.id;
+      b.innerHTML = `<span class="tab-ico" aria-hidden="true">${tab.icon}</span><span>${tab.label}</span>`;
+      b.onclick = () => {
+        if (!stateRef.current) return;
+        stateRef.current.uiPanel = tab.id;
+        beep('ui');
+        refreshAll(app);
+      };
+      tabs.appendChild(b);
     });
   }
 
@@ -149,12 +118,12 @@ export function bindUI(app) {
 
   on('btn-zoom-in', 'click', () => {
     if (!stateRef.current) return;
-    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom + 0.15, 0.9, 2.6);
+    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom + 0.15, 1.0, 2.8);
     refreshAll(app);
   });
   on('btn-zoom-out', 'click', () => {
     if (!stateRef.current) return;
-    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom - 0.15, 0.9, 2.6);
+    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom - 0.15, 1.0, 2.8);
     refreshAll(app);
   });
   on('btn-center', 'click', () => {
@@ -277,31 +246,34 @@ function cycleUnit(state) {
 }
 
 function canFound(state, unit) {
-  if (!unit || unit.type !== 'settler' || unit.moves <= 0) return false;
+  if (!unit || unit.type !== 'settler') return false;
   const t = state.world.tiles[unit.y * state.world.width + unit.x];
-  if (!t || t.type === 'water' || t.type === 'mountain' || t.type === 'volcano') return false;
-  return !state.cities.some((c) => Math.abs(c.x - unit.x) + Math.abs(c.y - unit.y) < 3);
+  if (!t || t.type === 'water') return false;
+  return !state.cities.some((c) => Math.abs(c.x - unit.x) + Math.abs(c.y - unit.y) < 4);
 }
 
 function canGather(state, unit) {
-  if (!unit || unit.type !== 'worker' || unit.moves <= 0) return false;
+  if (!unit || unit.type !== 'worker') return false;
   return state.world.deposits.some((d) => d.amount > 0 && d.x === unit.x && d.y === unit.y);
 }
 
 function canDelve(state, unit) {
-  if (!unit || unit.moves <= 0) return false;
+  if (!unit) return false;
   return state.world.sites.some((s) => s.discovered && !s.delved && Math.abs(s.x - unit.x) + Math.abs(s.y - unit.y) <= 1);
 }
 
-function setActionState(id, enabled, primary = false) {
+function setCmdState(id, enabled, primary = false) {
   const el = document.getElementById(id);
   if (!el) return;
   el.disabled = !enabled;
   el.classList.toggle('is-disabled', !enabled);
-  if (primary) {
-    el.classList.toggle('btn-primary', enabled);
-    el.classList.toggle('btn-secondary', !enabled);
-  }
+  if (primary) el.classList.toggle('cmd-primary', enabled);
+}
+
+function fmtDelta(n) {
+  if (!n) return { text: '+0', cls: 'delta zero' };
+  if (n > 0) return { text: `+${n}`, cls: 'delta' };
+  return { text: String(n), cls: 'delta neg' };
 }
 
 export function refreshAll(app) {
@@ -312,53 +284,88 @@ export function refreshAll(app) {
   const kingdom = document.getElementById('kingdom-name');
   if (kingdom) kingdom.textContent = state.player.name;
 
-  // resources
+  const turnMeta = document.getElementById('turn-meta');
+  if (turnMeta) turnMeta.textContent = `${state.season}, Year ${state.year} · Turn ${state.turn}`;
+
+  const yields = estimateYields(state);
   const res = state.player.res;
   const resEl = document.getElementById('resources');
   if (resEl) {
     resEl.innerHTML = ['food', 'wood', 'stone', 'gold', 'iron', 'lore']
-      .map((k) => `<span class="res"><span class="res-ico" aria-hidden="true">${RES_ICONS[k]}</span><i>${k}</i><b>${res[k] || 0}</b></span>`).join('');
+      .map((k) => {
+        const d = fmtDelta(yields[k] || 0);
+        return `<span class="res"><span class="res-ico" aria-hidden="true">${RES_ICONS[k]}</span><b>${res[k] || 0}</b><span class="${d.cls}">${d.text}</span></span>`;
+      }).join('');
   }
 
-  const seasonEl = document.getElementById('season-label');
-  const yearEl = document.getElementById('year-label');
-  const happyEl = document.getElementById('happy-label');
-  if (seasonEl) seasonEl.textContent = state.season;
-  if (yearEl) yearEl.textContent = `Year ${state.year} · Turn ${state.turn}`;
-  if (happyEl) happyEl.textContent = `Joy ${state.player.happiness}`;
+  const pop = state.cities.reduce((s, c) => s + c.pop, 0);
+  const popValue = document.getElementById('pop-value');
+  const happyValue = document.getElementById('happy-value');
+  if (popValue) popValue.textContent = String(pop);
+  if (happyValue) happyValue.textContent = `${Math.round(state.player.happiness)}%`;
 
-  // unit strip + action availability
+  const city = state.cities.find((c) => c.id === state.selectedCityId) || state.cities[0];
+  const cityTitle = document.getElementById('city-title');
+  const citySub = document.getElementById('city-subtitle');
+  const cityAvatar = document.getElementById('city-avatar');
+  if (city) {
+    if (cityTitle) cityTitle.textContent = city.name;
+    if (citySub) citySub.textContent = `${city.stage} · Pop ${city.pop}`;
+    if (cityAvatar) cityAvatar.textContent = city.name.slice(0, 1).toUpperCase();
+  } else {
+    if (cityTitle) cityTitle.textContent = state.player.name.replace(/^Kingdom of\s+/i, '') || 'Realm';
+    if (citySub) citySub.textContent = 'No city founded yet';
+    if (cityAvatar) cityAvatar.textContent = 'A';
+  }
+
   const u = selectedUnit(state);
   const unitInfo = document.getElementById('unit-info');
-  if (unitInfo) {
-    unitInfo.innerHTML = u
-      ? `<strong>${u.name}</strong><div class="unit-meta">Lv${u.level} · (${u.x},${u.y}) · moves <b>${u.moves}</b> · HP ${u.hp}/${u.maxHp}</div>`
-      : 'No unit selected';
+  const unitStats = document.getElementById('unit-stats');
+  const portrait = document.getElementById('unit-portrait');
+  if (u) {
+    const def = UNITS[u.type] || {};
+    if (unitInfo) {
+      unitInfo.innerHTML = `<strong>${u.name}</strong><div class="unit-meta">Lv${u.level} · (${u.x},${u.y})</div>`;
+    }
+    if (unitStats) {
+      unitStats.innerHTML = `
+        <span class="pill"><i>HP</i>${u.hp}/${u.maxHp}</span>
+        <span class="pill"><i>ATK</i>${u.atk}</span>
+        <span class="pill"><i>MOV</i>${u.moves}/${u.maxMoves}</span>
+        <span class="pill"><i>VIS</i>${u.vision}</span>`;
+    }
+    if (portrait) portrait.textContent = def.glyph || '?';
+  } else if (unitInfo) {
+    unitInfo.innerHTML = 'No unit selected';
+    if (unitStats) unitStats.innerHTML = '';
+    if (portrait) portrait.textContent = '?';
   }
 
-  setActionState('btn-found', canFound(state, u), true);
-  setActionState('btn-gather', canGather(state, u));
-  setActionState('btn-delve', canDelve(state, u));
-  setActionState('btn-wait', Boolean(u && u.moves > 0));
-  setActionState('btn-next-unit', state.units.length > 1);
+  setCmdState('btn-found', canFound(state, u), true);
+  setCmdState('btn-gather', canGather(state, u));
+  setCmdState('btn-delve', canDelve(state, u));
+  setCmdState('btn-wait', Boolean(u && u.moves > 0));
+  setCmdState('btn-next-unit', state.units.length > 1);
 
-  // tabs active
   document.querySelectorAll('#panel-tabs button').forEach((b) => {
-    b.classList.toggle('active', b.dataset.panel === state.uiPanel);
+    const active = b.dataset.panel === state.uiPanel
+      || (b.dataset.panel === 'more' && ['more', 'realm', 'chronicle', 'missions'].includes(state.uiPanel));
+    b.classList.toggle('active', active && (b.dataset.panel === state.uiPanel || (b.dataset.panel === 'more' && state.uiPanel === 'more')));
+    if (['realm', 'chronicle', 'missions'].includes(state.uiPanel)) {
+      b.classList.toggle('active', b.dataset.panel === 'more');
+    }
   });
 
   const side = document.getElementById('side-panel');
   if (side) side.innerHTML = renderPanel(state);
   wirePanel(app);
 
-  // log
   const logEl = document.getElementById('log');
   if (logEl) {
-    logEl.innerHTML = state.log.slice(0, 10)
+    logEl.innerHTML = state.log.slice(0, 6)
       .map((l) => `<div><span>Y${l.year}</span><span>${l.msg}</span></div>`).join('');
   }
 
-  // event banner
   const banner = document.getElementById('event-banner');
   if (banner) {
     if (state.event) {
@@ -380,7 +387,6 @@ export function refreshAll(app) {
     }
   }
 
-  // tutorial
   const tip = document.getElementById('tutorial');
   if (tip) {
     if (state.tutorialStep < TUTORIAL.length) {
@@ -396,8 +402,8 @@ export function refreshAll(app) {
   }
 
   if (app.canvas) renderMap(app.canvas, state);
-  const mini = document.getElementById('minimap');
-  if (mini) renderMinimap(mini, state);
+  const miniCanvas = document.getElementById('minimap');
+  if (miniCanvas) renderMinimap(miniCanvas, state);
   maybeVictory(app);
 }
 
@@ -411,25 +417,56 @@ function renderPanel(state) {
     case 'chronicle': return chroniclePanel(state);
     case 'missions': return missionsPanel(state);
     case 'realm': return realmPanel(state);
+    case 'more': return morePanel();
     default: return '';
   }
+}
+
+function morePanel() {
+  return `<h3>More</h3>
+    <div class="chip-actions">
+      <button data-act="goto" data-id="realm">Realm</button>
+      <button data-act="goto" data-id="chronicle">Chronicle</button>
+      <button data-act="goto" data-id="missions">Missions</button>
+    </div>
+    <p class="muted" style="margin-top:0.75rem">Kingdom records, diplomacy archives, and victory paths.</p>`;
 }
 
 function cityPanel(state) {
   const city = state.cities.find((c) => c.id === state.selectedCityId) || state.cities[0];
   if (!city) {
-    return `<h3>City</h3><p class="muted">No city yet. Select your Settler and press <b>F</b> or Found City.</p>
+    return `<h3>Overview</h3>
+      <p class="muted">No city yet. Select your Settler and press <b>F</b> or use Found.</p>
       <p>Units: ${state.units.map((u) => u.name).join(', ')}</p>`;
   }
-  return `<h3>${city.name}</h3>
-    <div class="stat-grid">
-      <div><span>Stage</span><b>${city.stage}</b></div>
-      <div><span>Population</span><b>${city.pop}/${city.housing}</b></div>
-      <div><span>Happiness</span><b>${Math.round(city.happiness)}</b></div>
-      <div><span>Defense</span><b>${city.defense}</b></div>
+  const growth = city.pop < city.housing && city.happiness > 40 ? '+1?' : '—';
+  const queueHtml = city.queue.length
+    ? city.queue.map((q, i) => {
+      const total = Math.max(q.left, q.turns || q.left || 1);
+      const done = Math.max(0, total - q.left);
+      const pct = Math.round((done / Math.max(1, total)) * 100);
+      return `<div class="project-card">
+        <div class="proj-ico">${q.kind === 'unit' ? 'A' : '◆'}</div>
+        <div>
+          <div class="proj-name">${q.name}</div>
+          <div class="proj-desc">${q.kind}</div>
+        </div>
+        <div class="proj-turns">${q.left} turn${q.left === 1 ? '' : 's'}</div>
+        ${i === 0 ? `<div class="progress"><i style="width:${pct}%"></i></div>` : ''}
+      </div>`;
+    }).join('')
+    : '<p class="muted">No active projects.</p>';
+
+  return `<h3>Overview</h3>
+    <div class="overview-list">
+      <div class="overview-row"><span>Population</span><b>${city.pop} / ${city.housing}</b></div>
+      <div class="overview-row"><span>Happiness</span><b>${Math.round(city.happiness)}%</b></div>
+      <div class="overview-row"><span>Defense</span><b>${city.defense}</b></div>
+      <div class="overview-row"><span>Stage</span><b>${city.stage}</b></div>
+      <div class="overview-row"><span>Growth</span><b>${growth}</b></div>
     </div>
-    <h4>Buildings</h4>
-    <p class="muted">${city.buildings.map((b) => BUILDINGS[b]?.name || b).join(' · ')}</p>
+    <h4>Projects</h4>
+    ${queueHtml}
     <h4>Construct</h4>
     <div class="chip-actions">
       ${Object.entries(BUILDINGS).filter(([id]) => id !== 'town_hall').map(([id, b]) =>
@@ -440,8 +477,6 @@ function cityPanel(state) {
       ${Object.entries(UNITS).map(([id, u]) =>
     `<button data-act="train" data-id="${id}">${u.name}</button>`).join('')}
     </div>
-    <h4>Queue</h4>
-    ${city.queue.map((q) => `<div class="muted">${q.name} — ${q.left} turn(s)</div>`).join('') || '<div class="muted">Empty</div>'}
     <h4>Your cities</h4>
     ${state.cities.map((c) => `<button data-act="select-city" data-id="${c.id}" class="${c.id === city.id ? 'active-city' : ''}">${c.name} (${c.stage})</button>`).join(' ')}
   `;
@@ -568,6 +603,7 @@ function wirePanel(app) {
     const state = app.stateRef.current;
     const city = state.cities.find((c) => c.id === state.selectedCityId) || state.cities[0];
     const act = btn.dataset.act;
+    if (act === 'goto') state.uiPanel = btn.dataset.id;
     if (act === 'build') queueBuilding(state, city, btn.dataset.id);
     if (act === 'train') queueUnit(state, city, btn.dataset.id);
     if (act === 'research') queueResearch(state, btn.dataset.id);

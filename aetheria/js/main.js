@@ -27,10 +27,12 @@ const app = {
 function fitCanvas() {
   const wrap = document.querySelector('.map-stage');
   if (!wrap || !canvas) return;
-  const w = Math.max(320, wrap.clientWidth);
-  const h = Math.max(360, wrap.clientHeight || (window.innerHeight - 240));
-  canvas.width = Math.floor(w);
-  canvas.height = Math.floor(h);
+  const rect = wrap.getBoundingClientRect();
+  const w = Math.max(320, Math.floor(rect.width));
+  const h = Math.max(240, Math.floor(rect.height));
+  if (canvas.width === w && canvas.height === h) return;
+  canvas.width = w;
+  canvas.height = h;
 }
 
 function showError(msg) {
@@ -67,6 +69,10 @@ function enterGame() {
   document.getElementById('start-screen')?.classList.add('hidden');
   document.getElementById('app')?.classList.remove('hidden');
   fitCanvas();
+  requestAnimationFrame(() => {
+    fitCanvas();
+    if (stateRef.current) refreshAll(app);
+  });
   if (!uiBound) {
     bindUI(app);
     uiBound = true;
