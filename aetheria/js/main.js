@@ -69,6 +69,10 @@ function enterGame() {
   document.getElementById('start-screen')?.classList.add('hidden');
   document.getElementById('app')?.classList.remove('hidden');
   fitCanvas();
+  requestAnimationFrame(() => {
+    fitCanvas();
+    if (stateRef.current) refreshAll(app);
+  });
   if (!uiBound) {
     bindUI(app);
     uiBound = true;
