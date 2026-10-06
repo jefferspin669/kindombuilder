@@ -1,18 +1,18 @@
 export const SEASONS = ['Spring', 'Summer', 'Autumn', 'Winter'];
 
 export const TERRAIN = {
-  water: { color: '#1a5f86', move: 99, name: 'Ocean' },
-  coast: { color: '#3f8fa8', move: 1, name: 'Coast' },
-  grass: { color: '#5eab58', move: 1, name: 'Grassland' },
-  forest: { color: '#247038', move: 2, name: 'Forest' },
-  hill: { color: '#8a9e4a', move: 2, name: 'Highlands' },
-  mountain: { color: '#9a9aa2', move: 3, name: 'Mountain' },
-  desert: { color: '#d8b56a', move: 2, name: 'Desert' },
-  snow: { color: '#e8f2f8', move: 2, name: 'Snow' },
-  swamp: { color: '#4f7658', move: 2, name: 'Swamp' },
-  volcano: { color: '#a04430', move: 3, name: 'Volcano' },
-  jungle: { color: '#17633a', move: 2, name: 'Jungle' },
-  ruins: { color: '#7a6552', move: 1, name: 'Ancient Ruins' },
+  water: { color: '#1a6a96', move: 99, name: 'Ocean' },
+  coast: { color: '#3f9ab4', move: 1, name: 'Coast' },
+  grass: { color: '#62b85a', move: 1, name: 'Grassland' },
+  forest: { color: '#2a7a3c', move: 2, name: 'Forest' },
+  hill: { color: '#92a84e', move: 2, name: 'Highlands' },
+  mountain: { color: '#a4a4ac', move: 3, name: 'Mountain' },
+  desert: { color: '#e0bd72', move: 2, name: 'Desert' },
+  snow: { color: '#eaf4fa', move: 2, name: 'Snow' },
+  swamp: { color: '#55805c', move: 2, name: 'Swamp' },
+  volcano: { color: '#b04a34', move: 3, name: 'Volcano' },
+  jungle: { color: '#187240', move: 2, name: 'Jungle' },
+  ruins: { color: '#826c58', move: 1, name: 'Ancient Ruins' },
 };
 
 export const BUILDINGS = {

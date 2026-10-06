@@ -449,6 +449,39 @@ export function diploAction(state, rivalId, action) {
   r.opinion = clamp(r.opinion, -100, 100);
 }
 
+export function estimateYields(state) {
+  const foodMult = state.season === 'Summer' ? 1.4 : state.season === 'Winter' ? 0.55 : 1;
+  const out = { food: 0, wood: 0, stone: 0, gold: 0, iron: 0, lore: 0, science: 0 };
+  for (const city of state.cities) {
+    let food = 3;
+    let wood = 1;
+    let stone = 0;
+    let gold = Math.floor(city.pop * (state.player.taxes / 100) * 0.35);
+    let iron = 0;
+    let science = 1;
+    for (const b of city.buildings) {
+      const def = BUILDINGS[b];
+      if (!def) continue;
+      if (def.food) food += def.food;
+      if (def.wood) wood += def.wood;
+      if (def.stone) stone += def.stone;
+      if (def.gold) gold += def.gold + (state.player.researched.includes('guilds') && b === 'marketplace' ? 2 : 0);
+      if (def.iron) iron += def.iron;
+      if (def.science) science += def.science;
+    }
+    out.food += Math.floor(food * foodMult);
+    out.wood += wood;
+    out.stone += stone;
+    out.gold += gold;
+    out.iron += iron;
+    out.science += science + Math.floor(city.pop / 20);
+  }
+  for (const r of state.rivals) {
+    if (!r.collapsed && r.trade) out.gold += 2;
+  }
+  return out;
+}
+
 export function endTurn(state) {
   state.seasonIndex = (state.seasonIndex + 1) % 4;
   state.season = SEASONS[state.seasonIndex];
@@ -463,35 +496,24 @@ export function endTurn(state) {
   }
 
   // city production
-  const foodMult = state.season === 'Summer' ? 1.4 : state.season === 'Winter' ? 0.55 : 1;
+  const yields = estimateYields(state);
+  state.player.res.food += yields.food;
+  state.player.res.wood += yields.wood;
+  state.player.res.stone += yields.stone;
+  state.player.res.gold += yields.gold;
+  state.player.res.iron += yields.iron;
+  state.player.science += yields.science;
+
   for (const city of state.cities) {
-    let food = 3;
-    let wood = 1;
-    let stone = 0;
-    let gold = Math.floor(city.pop * (state.player.taxes / 100) * 0.35);
-    let iron = 0;
-    let science = 1;
     let housing = 10;
     city.defense = 0;
     for (const b of city.buildings) {
       const def = BUILDINGS[b];
       if (!def) continue;
-      if (def.food) food += def.food;
-      if (def.wood) wood += def.wood;
-      if (def.stone) stone += def.stone;
-      if (def.gold) gold += def.gold + (state.player.researched.includes('guilds') && b === 'marketplace' ? 2 : 0);
-      if (def.iron) iron += def.iron;
-      if (def.science) science += def.science;
       if (def.housing) housing += def.housing;
       if (def.defense) city.defense += def.defense;
       if (def.happiness) city.happiness = clamp(city.happiness + 1, 0, 100);
     }
-    state.player.res.food += Math.floor(food * foodMult);
-    state.player.res.wood += wood;
-    state.player.res.stone += stone;
-    state.player.res.gold += gold;
-    state.player.res.iron += iron;
-    state.player.science += science + Math.floor(city.pop / 20);
 
     city.housing = housing;
     city.happiness = clamp(city.happiness - Math.floor(state.player.taxes / 12) + 2, 0, 100);

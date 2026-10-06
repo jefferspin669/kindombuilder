@@ -29,18 +29,41 @@
     </div>
 
     <div id="app" class="hidden">
-      <header class="bar">
-        <div class="bar-brand">
-          <a class="logo" href="index.html">Aetheria</a>
-          <span id="kingdom-name" class="kingdom-name">Kingdom</span>
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="crest" aria-hidden="true">
+            <svg viewBox="0 0 40 40" width="40" height="40">
+              <path fill="#c9a05a" d="M20 2l12 6v10c0 9-5.5 15.5-12 18C13.5 33.5 8 27 8 18V8l12-6z"/>
+              <path fill="#1a2420" d="M20 10c-3 4-5 7-5 11 0 4 2.2 6.5 5 8 2.8-1.5 5-4 5-8 0-4-2-7-5-11z"/>
+              <circle cx="20" cy="18" r="2.2" fill="#7aa8c4"/>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <a class="logo" href="index.html">Aetheria</a>
+            <div id="turn-meta" class="turn-meta">Spring, Year 1 · Turn 1</div>
+            <div id="kingdom-name" class="kingdom-name">Kingdom of Aralon</div>
+          </div>
         </div>
+
         <div id="resources" class="resources"></div>
-        <div class="meta">
-          <span id="happy-label" class="meta-pill meta-happy">☺ 65</span>
-          <span id="season-label" class="meta-pill">Spring</span>
-          <span id="year-label" class="meta-pill meta-turn">Year 1</span>
-          <button type="button" id="btn-end-turn" class="btn btn-primary">End Turn</button>
-          <button type="button" id="btn-menu" class="btn ghost">Menu</button>
+
+        <div class="top-stats">
+          <div id="pop-label" class="stat-chip">
+            <span class="stat-ico" aria-hidden="true">⚭</span>
+            <div>
+              <span class="stat-k">Population</span>
+              <strong id="pop-value">0</strong>
+            </div>
+          </div>
+          <div id="happy-label" class="stat-chip happy">
+            <span class="stat-ico" aria-hidden="true">☺</span>
+            <div>
+              <span class="stat-k">Happiness</span>
+              <strong id="happy-value">65%</strong>
+            </div>
+          </div>
+          <button type="button" id="btn-menu" class="icon-btn" title="Menu">⚙</button>
+          <button type="button" id="btn-end-turn" class="btn btn-end-turn">End Turn</button>
         </div>
       </header>
 
@@ -59,37 +82,59 @@
               </div>
             </div>
           </div>
-          <div class="action-bar">
-            <div id="unit-info" class="unit-info">Select a unit</div>
-            <div class="action-buttons">
-              <button type="button" id="btn-found" class="btn btn-action btn-primary" title="Found City (F)">
-                <span class="btn-ico" aria-hidden="true">◆</span><span class="btn-label">Found City</span>
+
+          <div class="command-dock">
+            <div id="log" class="log"></div>
+            <div id="unit-card" class="unit-card">
+              <div class="unit-portrait" id="unit-portrait" aria-hidden="true">?</div>
+              <div class="unit-details">
+                <div id="unit-info" class="unit-info">Select a unit</div>
+                <div id="unit-stats" class="unit-stats"></div>
+              </div>
+            </div>
+            <div class="command-buttons">
+              <button type="button" id="btn-found" class="cmd-btn cmd-primary" title="Found City (F)">
+                <span class="cmd-ico" aria-hidden="true">◆</span>
+                <span class="cmd-label">Found</span>
               </button>
-              <button type="button" id="btn-gather" class="btn btn-action btn-secondary" title="Gather (G)">
-                <span class="btn-ico" aria-hidden="true">▣</span><span class="btn-label">Gather</span>
+              <button type="button" id="btn-gather" class="cmd-btn" title="Gather (G)">
+                <span class="cmd-ico" aria-hidden="true">▣</span>
+                <span class="cmd-label">Gather</span>
               </button>
-              <button type="button" id="btn-delve" class="btn btn-action btn-secondary" title="Delve ruins">
-                <span class="btn-ico" aria-hidden="true">◈</span><span class="btn-label">Delve</span>
+              <button type="button" id="btn-delve" class="cmd-btn" title="Delve ruins">
+                <span class="cmd-ico" aria-hidden="true">◇</span>
+                <span class="cmd-label">Delve</span>
               </button>
-              <button type="button" id="btn-wait" class="btn btn-action btn-secondary" title="Skip remaining moves">
-                <span class="btn-ico" aria-hidden="true">▷</span><span class="btn-label">Wait</span>
+              <button type="button" id="btn-wait" class="cmd-btn" title="Skip remaining moves">
+                <span class="cmd-ico" aria-hidden="true">▣</span>
+                <span class="cmd-label">Wait</span>
               </button>
-              <button type="button" id="btn-next-unit" class="btn btn-action btn-utility" title="Next Unit (Tab)">
-                <span class="btn-ico" aria-hidden="true">⇄</span><span class="btn-label">Next Unit</span>
+              <button type="button" id="btn-next-unit" class="cmd-btn" title="Next Unit (Tab)">
+                <span class="cmd-ico" aria-hidden="true">➜</span>
+                <span class="cmd-label">Next</span>
+              </button>
+              <button type="button" id="btn-center" class="cmd-btn cmd-util" title="Center on selection">
+                <span class="cmd-ico" aria-hidden="true">◎</span>
+                <span class="cmd-label">Center</span>
               </button>
               <div class="zoom-group" role="group" aria-label="Map zoom">
-                <button type="button" id="btn-zoom-out" class="btn btn-action btn-utility" title="Zoom out">−</button>
-                <button type="button" id="btn-zoom-in" class="btn btn-action btn-utility" title="Zoom in">+</button>
-                <button type="button" id="btn-center" class="btn btn-action btn-utility" title="Center on selection">◎</button>
+                <button type="button" id="btn-zoom-out" class="cmd-btn cmd-util" title="Zoom out">−</button>
+                <button type="button" id="btn-zoom-in" class="cmd-btn cmd-util" title="Zoom in">+</button>
               </div>
             </div>
           </div>
-          <div id="log" class="log"></div>
         </section>
 
         <aside class="side">
+          <div class="side-header">
+            <div id="city-avatar" class="city-avatar">A</div>
+            <div>
+              <div id="city-title" class="city-title">No City</div>
+              <div id="city-subtitle" class="city-subtitle">Found a settlement</div>
+            </div>
+          </div>
           <div class="minimap-wrap">
-            <canvas id="minimap" width="280" height="160"></canvas>
+            <canvas id="minimap" width="280" height="140"></canvas>
           </div>
           <div id="panel-tabs" class="panel-tabs"></div>
           <div id="side-panel" class="side-panel"></div>
