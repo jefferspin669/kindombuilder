@@ -367,6 +367,7 @@ button:disabled,
     radial-gradient(ellipse at center, #18242c 0%, var(--bg-deep) 72%);
   background-size: 24px 24px, 24px 24px, auto;
   min-height: 0;
+  padding: 0;
   overflow: hidden;
 }
 
