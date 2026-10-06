@@ -12,7 +12,7 @@ export function renderMap(canvas, state) {
   if (!canvas || !state) return;
   const ctx = canvas.getContext('2d');
   const { world, camera } = state;
-  const tile = Math.max(12, Math.floor(28 * (camera.zoom || 1.55)));
+  const tile = Math.max(16, Math.floor(38 * (camera.zoom || 2)));
   const viewW = Math.ceil(canvas.width / tile) + 2;
   const viewH = Math.ceil(canvas.height / tile) + 2;
   const originX = clamp(Math.floor(camera.x - viewW / 2), 0, Math.max(0, world.width - viewW));
@@ -224,22 +224,22 @@ export function renderMap(canvas, state) {
 }
 
 function paintFogTile(ctx, px, py, tile, explored, x, y) {
-  const base = explored ? '#18241c' : '#0b100e';
-  ctx.fillStyle = base;
-  ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
   if (explored) {
-    ctx.fillStyle = ((x + y) % 2 === 0) ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.08)';
+    ctx.fillStyle = '#1c2a22';
     ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
-    ctx.strokeStyle = 'rgba(140,160,145,0.05)';
+    ctx.fillStyle = ((x + y) % 2 === 0) ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.08)';
+    ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
+    ctx.strokeStyle = 'rgba(140,160,145,0.08)';
     ctx.strokeRect(px + 0.5, py + 0.5, tile - 1, tile - 1);
-  } else {
-    // faint unknown hatch
-    ctx.strokeStyle = 'rgba(255,255,255,0.015)';
-    ctx.beginPath();
-    ctx.moveTo(px, py + tile);
-    ctx.lineTo(px + tile, py);
-    ctx.stroke();
+    return;
   }
+  ctx.fillStyle = '#101612';
+  ctx.fillRect(px, py, tile + 0.5, tile + 0.5);
+  ctx.strokeStyle = 'rgba(255,255,255,0.025)';
+  ctx.beginPath();
+  ctx.moveTo(px + 2, py + tile - 2);
+  ctx.lineTo(px + tile - 2, py + 2);
+  ctx.stroke();
 }
 
 function paintTerrain(ctx, t, px, py, tile, x, y, state) {

@@ -149,12 +149,12 @@ export function bindUI(app) {
 
   on('btn-zoom-in', 'click', () => {
     if (!stateRef.current) return;
-    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom + 0.15, 0.9, 2.6);
+    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom + 0.15, 1.0, 2.8);
     refreshAll(app);
   });
   on('btn-zoom-out', 'click', () => {
     if (!stateRef.current) return;
-    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom - 0.15, 0.9, 2.6);
+    stateRef.current.camera.zoom = clamp(stateRef.current.camera.zoom - 0.15, 1.0, 2.8);
     refreshAll(app);
   });
   on('btn-center', 'click', () => {
@@ -277,19 +277,19 @@ function cycleUnit(state) {
 }
 
 function canFound(state, unit) {
-  if (!unit || unit.type !== 'settler' || unit.moves <= 0) return false;
+  if (!unit || unit.type !== 'settler') return false;
   const t = state.world.tiles[unit.y * state.world.width + unit.x];
-  if (!t || t.type === 'water' || t.type === 'mountain' || t.type === 'volcano') return false;
-  return !state.cities.some((c) => Math.abs(c.x - unit.x) + Math.abs(c.y - unit.y) < 3);
+  if (!t || t.type === 'water') return false;
+  return !state.cities.some((c) => Math.abs(c.x - unit.x) + Math.abs(c.y - unit.y) < 4);
 }
 
 function canGather(state, unit) {
-  if (!unit || unit.type !== 'worker' || unit.moves <= 0) return false;
+  if (!unit || unit.type !== 'worker') return false;
   return state.world.deposits.some((d) => d.amount > 0 && d.x === unit.x && d.y === unit.y);
 }
 
 function canDelve(state, unit) {
-  if (!unit || unit.moves <= 0) return false;
+  if (!unit) return false;
   return state.world.sites.some((s) => s.discovered && !s.delved && Math.abs(s.x - unit.x) + Math.abs(s.y - unit.y) <= 1);
 }
 

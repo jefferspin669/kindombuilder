@@ -9,7 +9,7 @@ export function newCampaign(opts = {}) {
   const height = opts.height || 56;
   const world = createWorld(rand, width, height);
   const spawn = findLand(world, rand);
-  reveal(world, spawn.x, spawn.y, 4);
+  reveal(world, spawn.x, spawn.y, 5);
 
   const player = {
     name: opts.kingdomName || 'Kingdom of Aralon',
@@ -45,7 +45,7 @@ export function newCampaign(opts = {}) {
     log: [],
     selectedUnitId: units[0].id,
     selectedCityId: null,
-    camera: { x: spawn.x, y: spawn.y, zoom: 1.55 },
+    camera: { x: spawn.x, y: spawn.y, zoom: 2 },
     selectedTile: { x: spawn.x, y: spawn.y },
     event: null,
     missions: [],
@@ -700,8 +700,8 @@ export function serialize(state) {
 
 export function revive(data) {
   data.rand = mulberry32((data.seed || 1) + (data.turn || 0));
-  if (!data.camera) data.camera = { x: 0, y: 0, zoom: 1.55 };
-  if (data.camera.zoom == null || data.camera.zoom < 1.2) data.camera.zoom = 1.55;
+  if (!data.camera) data.camera = { x: 0, y: 0, zoom: 2 };
+  if (data.camera.zoom == null || data.camera.zoom < 1.6) data.camera.zoom = 2;
   if (!data.selectedTile) {
     const u = data.units?.find((unit) => unit.id === data.selectedUnitId) || data.units?.[0];
     data.selectedTile = u ? { x: u.x, y: u.y } : { x: data.camera.x, y: data.camera.y };
